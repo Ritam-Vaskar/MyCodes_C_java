@@ -6,27 +6,42 @@
 // Output : 30
 // Input: 4 3 2
 // Output : Exception occurred - CheckArgument
-package Java.4th Sem.Day6;
+// package Java.4th Sem.Day6;
+
+// User-defined exception class
+import java.util.Scanner;
+
+class CheckArgument extends Exception {
+    CheckArgument(String message) {
+        super(message);
+    }
+}
 
 public class q5 {
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Enter the numbers: ");
-        int num1 = scanner.nextInt();
-        int num2 = scanner.nextInt();
-        int num3 = scanner.nextInt();
-        int num4 = scanner.nextInt();
+        Scanner sc = new Scanner(System.in);
 
         try {
-            if (args.length < 4) {
+            System.out.print("Enter 4 integers: ");
+            String[] input = sc.nextLine().split(" ");
+
+            if (input.length < 4) {
                 throw new CheckArgument("Exception occurred - CheckArgument");
             }
-            int sum = num1 * num1 + num2 * num2 + num3 * num3 + num4 * num4;
-            System.out.println("Sum of squares: " + sum);
+
+            int sum = 0;
+            for (String numStr : input) {
+                int num = Integer.parseInt(numStr);
+                sum += num * num;
+            }
+
+            System.out.println("Output: " + sum);
         } catch (CheckArgument e) {
             System.out.println(e.getMessage());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input! Please enter only integers.");
+        } finally {
+            sc.close();
         }
-
-        scanner.close();
     }
 }
