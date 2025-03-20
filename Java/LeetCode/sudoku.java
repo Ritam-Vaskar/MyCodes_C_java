@@ -1,3 +1,4 @@
+package LeetCode;
 public class sudoku {
         // Check if placing the number in the given row and column is safe
         public boolean isSafe(char[][] board, int row, int col, int number) {

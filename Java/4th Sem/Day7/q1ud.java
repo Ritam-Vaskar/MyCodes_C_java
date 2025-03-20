@@ -59,5 +59,52 @@ public class q1ud {
         } else {
             System.out.println("Strings are not equal");
         }
+
+        // Check whether the character is present in the string and at which position without built-in functions
+        char ch = 'o';
+        int index = -1;
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) == ch) {
+                index = i;
+                break;
+            }
+        }
+        if (index != -1) {
+            System.out.println("Character '" + ch + "' is present at index " + index);
+        } else {
+            System.out.println("Character '" + ch + "' is not present in the string");
+        }
+
+        // Check whether the string is palindrome or not. without build in functions
+        boolean isPalindrome = true;
+        for (int i = 0; i < str.length() / 2; i++) {
+            if (str.charAt(i) != str.charAt(str.length() - 1 - i)) {
+                isPalindrome = false;
+                break;
+            }
+        }
+        if (isPalindrome) {
+            System.out.println("The string is a palindrome.");
+        } else {
+            System.out.println("The string is not a palindrome.");
+        }
+
+        // Check the number of word, vowel and consonant in the string without built-in functions
+        int wordCount = 1;
+        int vowelCount = 0;
+        int consonantCount = 0;
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) == ' ') {
+                wordCount++;
+            } else if (str.charAt(i) == 'a' || str.charAt(i) == 'e' || str.charAt(i) == 'i' || str.charAt(i) == 'o' || str.charAt(i) == 'u') {
+                vowelCount++;
+            } else {
+                consonantCount++;
+            }
+        }
+        System.out.println("Number of words: " + wordCount);
+        System.out.println("Number of vowels: " + vowelCount);
+        System.out.println("Number of consonants: " + consonantCount);
+
     }
 }
