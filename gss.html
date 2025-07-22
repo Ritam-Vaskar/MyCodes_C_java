@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecozon Success Metrics & Impact</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: white;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .slide-container {
+            width: 1200px;
+            height: 675px;
+            background: white;
+            border: 2px solid #ddd;
+            position: relative;
+        }
+
+        .breadcrumb {
+            background: linear-gradient(90deg, #8B5A96 0%, #6B4C87 25%, #5B3E78 50%, #4B3069 75%, #3B225A 100%);
+            height: 40px;
+            display: flex;
+            align-items: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 0 20px;
+        }
+
+        .breadcrumb-item {
+            padding: 0 15px;
+            border-right: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .breadcrumb-item:last-child {
+            border-right: none;
+            background: rgba(255,255,255,0.2);
+        }
+
+        .title-section {
+            padding: 20px 40px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .content-area {
+            height: calc(100% - 120px);
+            padding: 30px;
+        }
+
+        .phase-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .phase-boxes {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+        }
+
+        .phase-box {
+            flex: 1;
+            text-align: center;
+            border: 2px solid #8B5A96;
+            background: white;
+            padding: 8px 5px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .phase-box:first-child {
+            border-radius: 15px 0 0 15px;
+        }
+
+        .phase-box:last-child {
+            border-radius: 0 15px 15px 0;
+        }
+
+        .phase-box:not(:first-child) {
+            border-left: none;
+        }
+
+        .timeline {
+            display: flex;
+            gap: 0;
+            margin-bottom: 30px;
+        }
+
+        .year-box {
+            flex: 1;
+            text-align: center;
+            background: #8B5A96;
+            color: white;
+            padding: 10px 5px;
+            font-size: 14px;
+            font-weight: bold;
+            border-right: 1px solid white;
+        }
+
+        .year-box:first-child {
+            border-radius: 10px 0 0 10px;
+        }
+
+        .year-box:last-child {
+            border-radius: 0 10px 10px 0;
+            border-right: none;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 150px 1fr 1fr 1fr;
+            gap: 0;
+            border: 2px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .metric-row {
+            display: contents;
+        }
+
+        .metric-header {
+            background: #8B5A96;
+            color: white;
+            padding: 12px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            border-bottom: 1px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .metric-cell {
+            padding: 15px 10px;
+            border-right: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60px;
+        }
+
+        .metric-cell:last-child {
+            border-right: none;
+        }
+
+        .metric-row:last-child .metric-cell {
+            border-bottom: none;
+        }
+
+        .metric-icons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: white;
+        }
+
+        .b2b-icon { background: #4CAF50; }
+        .b2c-icon { background: #2196F3; }
+        .platform-icon { background: #FF9800; }
+
+        .metric-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2E7D32;
+            margin-bottom: 3px;
+        }
+
+        .metric-label {
+            font-size: 9px;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .metric-description {
+            font-size: 8px;
+            color: #888;
+            margin-top: 3px;
+            line-height: 1.2;
+        }
+
+        .capability-row {
+            background: #f0f0f0;
+        }
+
+        .supply-row {
+            background: #e8f5e8;
+        }
+
+        .location-row {
+            background: #fff3e0;
+        }
+
+        .energy-row {
+            background: #e3f2fd;
+        }
+
+        .plus-symbol {
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 0 5px;
+        }
+
+        .arrow-container {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .arrow {
+            width: 0;
+            height: 0;
+            border-left: 15px solid #8B5A96;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+        }
+
+        .section-number {
+            position: absolute;
+            bottom: 20px;
+            left: 30px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="breadcrumb">
+            <div class="breadcrumb-item">Sustainability Solutions</div>
+            <div class="breadcrumb-item">AI-Driven Optimization</div>
+            <div class="breadcrumb-item">Success Metrics</div>
+            <div class="breadcrumb-item">Impact Analysis</div>
+            <div class="breadcrumb-item">Future Roadmap</div>
+        </div>
+
+        <div class="title-section">
+            <div class="title">Ecozon's solution is expected to evolve in three phases to develop capacity in time to meet the demand of sustainable transformation resolution of increasing the adoption of eco-friendly practices to 30% by 2030</div>
+        </div>
+
+        <div class="content-area">
+            <div class="phase-boxes">
+                <div class="phase-box">PHASE 1</div>
+                <div class="phase-box">PHASE 2</div>
+                <div class="phase-box">PHASE 3</div>
+            </div>
+
+            <div class="timeline">
+                <div class="year-box">2024</div>
+                <div class="year-box">2025</div>
+                <div class="year-box">2026</div>
+                <div class="year-box">2027</div>
+                <div class="year-box">2028</div>
+                <div class="year-box">2029</div>
+                <div class="year-box">2030</div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-header">Success Segments</div>
+                <div class="metric-header">
+                    <div class="metric-icons">
+                        <div class="icon b2b-icon">B</div>
+                        <div class="icon b2c-icon">C</div>
+                        <div class="icon platform-icon">P</div>
+                    </div>
+                </div>
+                <div class="metric-header">
+                    <div class="metric-icons">
+                        <div class="icon b2b-icon">B</div>
+                        <div class="icon b2c-icon">C</div>
+                        <div class="icon platform-icon">P</div>
+                    </div>
+                </div>
+                <div class="metric-header">
+                    <div class="metric-icons">
+                        <div class="icon b2b-icon">B</div>
+                        <div class="icon b2c-icon">C</div>
+                        <div class="icon platform-icon">P</div>
+                    </div>
+                </div>
+
+                <div class="metric-header">Business Model</div>
+                <div class="metric-cell">
+                    <div style="font-weight: bold; margin-bottom: 5px;">AI Business Intelligence</div>
+                    <div class="metric-description">Website scanning + Data analysis + Smart recommendations</div>
+                </div>
+                <div class="metric-cell">
+                    <div style="font-weight: bold; margin-bottom: 5px;">Marketplace + Services Expansion</div>
+                    <div class="metric-description">Eco products + Installation services + Subscription model</div>
+                </div>
+                <div class="metric-cell">
+                    <div style="font-weight: bold; margin-bottom: 5px;">Full Ecosystem Integration</div>
+                    <div class="metric-description">API partnerships + Chrome extension + Enterprise solutions</div>
+                </div>
+
+                <div class="metric-header">User Personas</div>
+                <div class="metric-cell">
+                    <div style="color: #4CAF50; font-weight: bold;">Businesses</div>
+                    <div style="color: #2196F3; font-weight: bold;">Early Adopters</div>
+                    <div style="color: #FF9800; font-weight: bold;">Cost-focused</div>
+                </div>
+                <div class="metric-cell">
+                    <div style="color: #4CAF50; font-weight: bold;">Businesses</div>
+                    <div style="color: #2196F3; font-weight: bold;">Eco-conscious</div>
+                    <div style="color: #FF9800; font-weight: bold;">Convenience-focused</div>
+                </div>
+                <div class="metric-cell">
+                    <div style="color: #4CAF50; font-weight: bold;">Businesses</div>
+                    <div style="color: #2196F3; font-weight: bold;">Mainstream</div>
+                    <div style="color: #FF9800; font-weight: bold;">Impact-focused</div>
+                </div>
+
+                <div class="metric-header capability-row">Impact Development</div>
+                <div class="metric-cell capability-row">
+                    <div class="metric-value">120K+</div>
+                    <div class="metric-label">kg CO₂ Saved</div>
+                </div>
+                <div class="metric-cell capability-row">
+                    <div class="metric-value">85%</div>
+                    <div class="metric-label">Waste Reduction</div>
+                </div>
+                <div class="metric-cell capability-row">
+                    <div class="metric-value">2.3M</div>
+                    <div class="metric-label">Plastic Items Replaced</div>
+                </div>
+
+                <div class="metric-header supply-row">Revenue Supply</div>
+                <div class="metric-cell supply-row">
+                    <span style="color: #666;">B2B SaaS</span>
+                    <span class="plus-symbol">+</span>
+                    <span style="color: #4CAF50; font-weight: bold;">Consulting</span>
+                </div>
+                <div class="metric-cell supply-row">
+                    <span style="color: #666;">B2B SaaS</span>
+                    <span class="plus-symbol">+</span>
+                    <span style="color: #4CAF50; font-weight: bold;">Marketplace</span>
+                </div>
+                <div class="metric-cell supply-row">
+                    <span style="color: #666;">B2B SaaS</span>
+                    <span class="plus-symbol">+</span>
+                    <span style="color: #4CAF50; font-weight: bold;">API Licensing</span>
+                </div>
+
+                <div class="metric-header location-row">Market</div>
+                <div class="metric-cell location-row">Urban SMEs Only</div>
+                <div class="metric-cell location-row">Urban + Tier 2 Cities</div>
+                <div class="metric-cell location-row">Urban + Tier 2 + Rural</div>
+
+                <div class="metric-header energy-row">Success Portfolio</div>
+                <div class="metric-cell energy-row">
+                    <span style="color: #666;">120+ Partners</span>
+                    <span class="plus-symbol">+</span>
+                    <span style="color: #4CAF50; font-weight: bold;">4.9★ Rating</span>
+                </div>
+                <div class="metric-cell energy-row">
+                    <span style="color: #666;">₹8.5M Savings</span>
+                    <span class="plus-symbol">+</span>
+                    <span style="color: #4CAF50; font-weight: bold;">AI Optimization</span>
+                </div>
+                <div class="metric-cell energy-row">
+                    <span style="color: #666;">Net Zero</span>
+                    <span class="plus-symbol">+</span>
+                    <span style="color: #4CAF50; font-weight: bold;">Carbon Credits</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="arrow-container">
+            <div class="arrow"></div>
+        </div>
+
+        <div class="section-number">3</div>
+    </div>
+</body>
+</html>
