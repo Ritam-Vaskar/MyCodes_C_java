@@ -5,8 +5,8 @@
 int main()
 {
     FILE *fptr;
-    fptr = fopen("random.txt", "w");
-    for (int i = 0; i < 5; i++)
+    fptr = fopen("random3.txt", "w");
+    for (int i = 0; i < 50; i++)
     {
         int num = rand() % 100 + 1;
         fprintf(fptr, "%d\n", num);
