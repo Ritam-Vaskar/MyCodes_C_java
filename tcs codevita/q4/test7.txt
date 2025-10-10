@@ -1,0 +1,8 @@
+5 4
+center J1 J2 J3 J4 J5
+J1 W1
+J2 W2
+J3 W3
+J4 W4
+J5 W5
+W1 W2 W3 W4 W5

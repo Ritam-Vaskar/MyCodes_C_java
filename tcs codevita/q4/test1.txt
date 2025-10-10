@@ -1,0 +1,9 @@
+6
+center jun1 jun3
+jun1 jun2
+jun2 jun4 jun6
+jun4 soap
+jun6 biscuit paste
+jun3 chocolate
+soap paste chocolate biscuit soap chocolate
+2

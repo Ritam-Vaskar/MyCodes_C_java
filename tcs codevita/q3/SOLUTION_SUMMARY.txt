@@ -1,0 +1,77 @@
+╔═══════════════════════════════════════════════════════════════╗
+║           STRANGE STRING PROBLEM - SOLUTION SUMMARY           ║
+╚═══════════════════════════════════════════════════════════════╝
+
+PROBLEM: Find additional cost when rearrangement is NOT allowed
+         compared to when rearrangement IS allowed.
+
+FILES CREATED:
+--------------
+✓ q3.c          - Main solution
+✓ test1.txt     - Example 1 (gowiththeflow)
+✓ test2.txt     - Example 2 (abcdefg)
+✓ custom_test1.txt - Simple rearrangement case
+✓ custom_test2.txt - Optimal without rearrangement
+✓ custom_test3.txt - Palindrome test
+✓ custom_test4.txt - Individual characters
+✓ custom_test5.txt - Complex word (programming)
+
+TEST RESULTS:
+=============
+
+┌─────────────┬──────────────────┬──────────┬────────┐
+│ Test Case   │ Target String    │ Result   │ Status │
+├─────────────┼──────────────────┼──────────┼────────┤
+│ Test 1      │ gowiththeflow    │ 1        │ ✅ PASS│
+│ Test 2      │ abcdefg          │ 0        │ ✅ PASS│
+│ Custom 1    │ abc              │ 5        │ ✅ PASS│
+│ Custom 2    │ hello            │ 0        │ ✅ PASS│
+│ Custom 3    │ abcd             │ 0        │ ✅ PASS│
+│ Custom 4    │ test             │ 1        │ ✅ PASS│
+│ Custom 5    │ programming      │ 0        │ ✅ PASS│
+└─────────────┴──────────────────┴──────────┴────────┘
+
+ALGORITHM:
+==========
+• Dynamic Programming approach
+• Two phases:
+  1. Calculate minimum cost WITH rearrangement allowed
+  2. Calculate minimum cost WITHOUT rearrangement
+• Return the difference
+
+KEY INSIGHTS:
+=============
+✓ When rearrangement IS allowed:
+  - Check if piece contains all needed characters (frequency count)
+  - Can use characters in any order
+
+✓ When rearrangement is NOT allowed:
+  - Check if target appears as subsequence in piece
+  - Must maintain character order
+
+COMPLEXITY:
+===========
+• Time: O(N × M × L²)
+  - N = target length
+  - M = number of pieces
+  - L = max piece length
+• Space: O(N) for DP arrays
+
+SCENARIOS COVERED:
+==================
+✅ Cases where rearrangement makes difference (result > 0)
+✅ Cases where no rearrangement needed (result = 0)
+✅ Simple targets (3-4 characters)
+✅ Complex targets (10+ characters)
+✅ Various piece configurations
+
+COMPILATION & USAGE:
+====================
+Compile:  gcc -o q3.exe q3.c
+Run:      .\q3.exe test1.txt
+Or:       .\q3.exe < input.txt
+
+SUCCESS RATE: 7/7 (100%) ✓
+=================================
+All tests passing successfully!
+=================================

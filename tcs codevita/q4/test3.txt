@@ -1,0 +1,5 @@
+3 2
+center J1 J2
+J1 W1 W2
+J2 W3
+W1 W2 W3

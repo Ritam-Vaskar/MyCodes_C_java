@@ -1,0 +1,4 @@
+abcd
+2
+abcd dcba
+10 10

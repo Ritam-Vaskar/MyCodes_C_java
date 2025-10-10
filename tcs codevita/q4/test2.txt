@@ -1,0 +1,7 @@
+4
+center jun1
+jun1 bike jun2 jun3
+jun2 car
+jun3 cycle plane
+cycle plane car cycle cycle bike car cycle bike car
+3

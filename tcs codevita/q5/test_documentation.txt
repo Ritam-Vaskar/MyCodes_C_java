@@ -1,0 +1,175 @@
+=================================================
+Q5: Home to Home - Test Cases
+=================================================
+
+Problem: Count unique cycles starting/ending at house
+- Each point visited at most once per journey (except start/end)
+- Reverse paths are considered the same
+- Need to handle points that lie on segments
+
+=================================================
+TEST CASE 1 (Provided)
+=================================================
+Input: test1.txt
+N = 12 segments
+House at (0, 2)
+
+Structure: Complex grid-like path network with multiple segments
+
+Expected Output: 3
+Actual Output: 3 ✓
+
+Logic:
+The solution correctly identifies that out of 6 total paths found,
+only 3 are unique when considering reverse paths as duplicates:
+1. (0,2) -> (0,5) -> (2,5) -> (2,4) -> (5,4) -> (5,3) -> (4,3) -> (4,2) -> (0,2)
+2. (0,2) -> (0,5) -> ... (longer path) ... -> (0,2)  
+3. (0,2) -> (2,2) -> (2,1) -> (3,1) -> (3,0) -> (0,0) -> (0,2)
+
+Key insight: Points that lie ON segments (like (0,2) on segment (0,0)-(0,5))
+must be detected and the segments split accordingly.
+
+=================================================
+TEST CASE 2 (Provided)
+=================================================
+Input: test2.txt
+N = 10 segments
+House at (4, 3)
+
+Structure: Rectangular path around house
+
+Expected Output: 1
+Actual Output: 1 ✓
+
+Logic:
+Only one unique cycle exists around the house:
+(4,3) -> (4,11) -> (11,11) -> (11,8) -> (7,8) -> (7,7) -> (9,7) -> (9,6) -> (5,6) -> (5,3) -> (4,3)
+
+The reverse path is considered the same, so answer is 1.
+
+=================================================
+TEST CASE 3 (Custom - Simple Square)
+=================================================
+Input: test3.txt
+N = 4 segments
+House at (0, 0) - corner
+
+Structure:
+Square with corners at (0,0), (2,0), (2,2), (0,2)
+
+Expected Output: 1
+Actual Output: 1 ✓
+
+Logic:
+Simple square has only one unique cycle.
+Clockwise and counter-clockwise are the same path.
+
+=================================================
+TEST CASE 4 (Custom - Divided Rectangle)
+=================================================
+Input: test4.txt
+N = 6 segments
+House at (0, 0)
+
+Structure:
+Rectangle 3x3 with vertical divider at x=1
+
+Expected Output: 2
+Actual Output: 2 ✓
+
+Logic:
+Two unique cycles:
+1. Outer rectangle
+2. Left sub-rectangle
+
+=================================================
+TEST CASE 5 (Custom - Grid with Cross)
+=================================================
+Input: test5.txt
+N = 8 segments
+House at (0, 0)
+
+Structure:
+4x4 square with:
+- Vertical line at x=2
+- Horizontal line at y=2
+- Diagonal from (2,2) to (4,4)
+
+Expected Output: 11
+Actual Output: 11 ✓
+
+Logic:
+Multiple cycles possible due to grid structure.
+The cross divisions create many possible unique paths.
+
+=================================================
+TEST CASE 6 (Custom - Center Point)
+=================================================
+Input: test6.txt
+N = 6 segments
+House at (1, 1) - center
+
+Structure:
+Square 2x2 with center point at (1,1)
+Cross-pattern connecting center to edges
+
+Expected Output: 12
+Actual Output: 12 ✓
+
+Logic:
+Center point connected to 4 sides creates many unique cycles.
+
+=================================================
+TEST CASE 7 (Custom - Triangle with Diagonal)
+=================================================
+Input: test7.txt
+N = 5 segments
+House at (1, 1) - lies on diagonal
+
+Structure:
+Triangle (0,0), (3,0), (0,3), (3,3) with diagonal (0,0)-(3,3)
+
+Expected Output: 2
+Actual Output: 2 ✓
+
+Logic:
+Diagonal splits the region into 2 triangular paths.
+
+=================================================
+SUMMARY
+=================================================
+Total Tests: 7
+Passed: 7
+Failed: 0
+
+All test cases pass! ✓
+
+Key Test Coverage:
+- Basic cycle detection (test1, test2)
+- Simple shapes (test3 - square)
+- Subdivided regions (test4, test5)
+- Center point connectivity (test6)
+- Points lying on segments (test1, test7)
+- Different house positions (corner, edge, center, on-segment)
+
+Algorithm Highlights:
+✓ Point-on-segment detection
+✓ Segment splitting at intermediate points
+✓ Graph construction from segments
+✓ DFS cycle finding with backtracking
+✓ Canonical cycle representation (handles rotations and reversals)
+✓ Lexicographic comparison for uniqueness
+
+Canonical Cycle Representation:
+- Find minimum element in cycle
+- Start from minimum element
+- Choose direction (forward/backward) that gives smaller lexicographic string
+- This ensures:
+  * Rotations of same cycle map to same string
+  * Reverses of same cycle map to same string
+  * Each unique cycle has exactly one canonical representation
+
+Example:
+Cycle: [12, 0, 6, 7, 4, 5]
+Reverse: [12, 5, 4, 7, 6, 0]
+Canonical for both: "0,12,5,4,7,6," (starts from min=0, chooses better direction)
