@@ -15,12 +15,11 @@ int costs[MAX_N];
 int n;
 int target_len;
 
-// DP arrays
-// dp[i] = minimum cost to cover first i characters of target
-int dp1[MAX_STR_LEN + 1]; // With rearrangement
-int dp2[MAX_STR_LEN + 1]; // Without rearrangement
 
-// Check if we can form subsequence target[start..end-1] using characters from piece (with rearrangement)
+int dp1[MAX_STR_LEN + 1]; 
+int dp2[MAX_STR_LEN + 1]; 
+
+
 bool canFormWithRearrangement(int start, int end, const char* piece) {
     int freq[26] = {0};
     for (int i = 0; piece[i] != '\0'; i++) {
@@ -37,7 +36,7 @@ bool canFormWithRearrangement(int start, int end, const char* piece) {
     return true;
 }
 
-// Check if we can form subsequence target[start..end-1] using piece as a subsequence (without rearrangement)
+
 bool canFormWithoutRearrangement(int start, int end, const char* piece) {
     int piece_idx = 0;
     int piece_len = strlen(piece);
@@ -67,7 +66,7 @@ void solveDPWithRearrangement() {
         if (dp1[i] >= INF) continue;
         
         for (int j = 0; j < n; j++) {
-            // Try to extend from position i using piece j
+            
             for (int len = 1; len <= strlen(pieces[j]) && i + len <= target_len; len++) {
                 if (canFormWithRearrangement(i, i + len, pieces[j])) {
                     if (dp1[i] + costs[j] < dp1[i + len]) {
@@ -89,7 +88,7 @@ void solveDPWithoutRearrangement() {
         if (dp2[i] >= INF) continue;
         
         for (int j = 0; j < n; j++) {
-            // Try to extend from position i using piece j
+            
             for (int len = 1; len <= strlen(pieces[j]) && i + len <= target_len; len++) {
                 if (canFormWithoutRearrangement(i, i + len, pieces[j])) {
                     if (dp2[i] + costs[j] < dp2[i + len]) {
@@ -114,7 +113,7 @@ int main(int argc, char* argv[]) {
         fp = stdin;
     }
     
-    // Read input
+    
     fgets(target, sizeof(target), fp);
     target[strcspn(target, "\n")] = '\0';
     target_len = strlen(target);
@@ -131,11 +130,11 @@ int main(int argc, char* argv[]) {
         fclose(fp);
     }
     
-    // Solve both cases
+    
     solveDPWithRearrangement();
     solveDPWithoutRearrangement();
     
-    // Calculate difference
+    
     int diff = dp2[target_len] - dp1[target_len];
     
     printf("%d\n", diff);

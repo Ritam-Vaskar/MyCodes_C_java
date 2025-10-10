@@ -7,17 +7,16 @@
 #define MAX_N 25
 
 typedef struct {
-    int x, y, dist;
-} Node;
+    int row, col, distance;
+} Position;
 
-// Min-heap priority queue
 typedef struct {
-    Node* data;
+    Position* data;
     int size, capacity;
 } PriorityQueue;
 
 typedef struct {
-    Node* data;
+    Position* data;
     int front, rear, size, capacity;
 } Queue;
 
@@ -27,7 +26,7 @@ Queue* createQueue(int capacity) {
     q->front = 0;
     q->size = 0;
     q->rear = capacity - 1;
-    q->data = (Node*)malloc(q->capacity * sizeof(Node));
+    q->data = (Position*)malloc(q->capacity * sizeof(Position));
     return q;
 }
 
@@ -35,14 +34,14 @@ int isEmpty(Queue* q) {
     return q->size == 0;
 }
 
-void enqueue(Queue* q, Node item) {
+void enqueue(Queue* q, Position item) {
     q->rear = (q->rear + 1) % q->capacity;
     q->data[q->rear] = item;
     q->size++;
 }
 
-Node dequeue(Queue* q) {
-    Node item = q->data[q->front];
+Position dequeue(Queue* q) {
+    Position item = q->data[q->front];
     q->front = (q->front + 1) % q->capacity;
     q->size--;
     return item;
@@ -58,11 +57,11 @@ int dist[MAX_N][MAX_N];
 int dx[] = {-1, 1, 0, 0};
 int dy[] = {0, 0, -1, 1};
 
-void parseWall(char wall[MAX_N][MAX_N * 10], int n, int* srcX, int* srcY, int* dstX, int* dstY) {
-    int row = 0, col = 0;
+void parseWall(char wall[MAX_N][MAX_N * 10], int n, int* sourceRow, int* sourceCol, int* destRow, int* destCol) {
+    int currentRow = 0, currentCol = 0;
     
     for (int i = 0; i < n; i++) {
-        col = 0;
+        currentCol = 0;
         int j = 0;
         while (wall[i][j] != '\0' && wall[i][j] != '\n') {
             if (wall[i][j] >= '0' && wall[i][j] <= '9') {
@@ -73,19 +72,19 @@ void parseWall(char wall[MAX_N][MAX_N * 10], int n, int* srcX, int* srcY, int* d
                 }
                 
                 if (wall[i][j] != '\0' && wall[i][j] != '\n') {
-                    char type = wall[i][j];
+                    char brickType = wall[i][j];
                     
                     for (int k = 0; k < length; k++) {
-                        if (col < n) {
-                            grid[row][col] = type;
-                            if (type == 'S') {
-                                *srcX = row;
-                                *srcY = col;
-                            } else if (type == 'D') {
-                                *dstX = row;
-                                *dstY = col;
+                        if (currentCol < n) {
+                            grid[currentRow][currentCol] = brickType;
+                            if (brickType == 'S') {
+                                *sourceRow = currentRow;
+                                *sourceCol = currentCol;
+                            } else if (brickType == 'D') {
+                                *destRow = currentRow;
+                                *destCol = currentCol;
                             }
-                            col++;
+                            currentCol++;
                         }
                     }
                     j++;
@@ -94,11 +93,11 @@ void parseWall(char wall[MAX_N][MAX_N * 10], int n, int* srcX, int* srcY, int* d
                 j++;
             }
         }
-        row++;
+        currentRow++;
     }
 }
 
-int bfs(int n, int srcX, int srcY, int dstX, int dstY) {
+int bfs(int n, int sourceRow, int sourceCol, int destRow, int destCol) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             dist[i][j] = INT_MAX;
@@ -106,56 +105,50 @@ int bfs(int n, int srcX, int srcY, int dstX, int dstY) {
     }
     
     Queue* q = createQueue(n * n * 10);
-    Node start = {srcX, srcY, 0};
+    Position start = {sourceRow, sourceCol, 0};
     enqueue(q, start);
-    dist[srcX][srcY] = 0;
+    dist[sourceRow][sourceCol] = 0;
     
     while (!isEmpty(q)) {
-        Node curr = dequeue(q);
-        int x = curr.x;
-        int y = curr.y;
-        int d = curr.dist;
+        Position current = dequeue(q);
+        int row = current.row;
+        int col = current.col;
+        int currentDist = current.distance;
         
-        if (x == dstX && y == dstY) {
+        if (row == destRow && col == destCol) {
             freeQueue(q);
-            return d;
+            return currentDist;
         }
         
-        // Skip if we've already found a better path to this cell
-        if (d > dist[x][y]) continue;
+        if (currentDist > dist[row][col]) continue;
         
         for (int i = 0; i < 4; i++) {
-            int nx = x + dx[i];
-            int ny = y + dy[i];
+            int nextRow = row + dx[i];
+            int nextCol = col + dy[i];
             
-            if (nx >= 0 && nx < n && ny >= 0 && ny < n) {
-                char cell = grid[nx][ny];
-                int newDist;
+            if (nextRow >= 0 && nextRow < n && nextCol >= 0 && nextCol < n) {
+                char cellType = grid[nextRow][nextCol];
+                int newDistance;
                 
-                // Can't move to Red bricks
-                if (cell == 'R') {
+                if (cellType == 'R') {
                     continue;
                 }
-                // Moving to Green brick costs 1
-                else if (cell == 'G') {
-                    newDist = d + 1;
+                else if (cellType == 'G') {
+                    newDistance = currentDist + 1;
                 }
-                // Moving to Destination costs 0
-                else if (cell == 'D') {
-                    newDist = d;
+                else if (cellType == 'D') {
+                    newDistance = currentDist;
                 }
-                // Skip Source (we don't revisit it)
-                else if (cell == 'S') {
+                else if (cellType == 'S') {
                     continue;
                 }
-                // Skip any other character
                 else {
                     continue;
                 }
                 
-                if (newDist < dist[nx][ny]) {
-                    dist[nx][ny] = newDist;
-                    Node next = {nx, ny, newDist};
+                if (newDistance < dist[nextRow][nextCol]) {
+                    dist[nextRow][nextCol] = newDistance;
+                    Position next = {nextRow, nextCol, newDistance};
                     enqueue(q, next);
                 }
             }
@@ -187,10 +180,10 @@ int main(int argc, char* argv[]) {
         fgets(wall[i], MAX_N * 10, fp);
     }
     
-    int srcX, srcY, dstX, dstY;
-    parseWall(wall, n, &srcX, &srcY, &dstX, &dstY);
+    int sourceRow, sourceCol, destRow, destCol;
+    parseWall(wall, n, &sourceRow, &sourceCol, &destRow, &destCol);
     
-    int result = bfs(n, srcX, srcY, dstX, dstY);
+    int result = bfs(n, sourceRow, sourceCol, destRow, destCol);
     printf("%d\n", result);
     
     if (fp != stdin) {

@@ -7,49 +7,49 @@
 #define MAX_TREES 50
 
 typedef struct Edge {
-    int to;
+    int destination;
     struct Edge* next;
 } Edge;
 
 typedef struct {
-    int spot;
-    int energy;
-    int tree;
-} State;
+    int location;
+    int energyUsed;
+    int currentTree;
+} MonkeyState;
 
 typedef struct {
-    State* data;
+    MonkeyState* data;
     int size;
     int capacity;
 } PriorityQueue;
 
-Edge* adjList[MAX_SPOTS];
-int spotTrees[MAX_SPOTS][MAX_TREES];
-int spotTreeCount[MAX_SPOTS];
-int parent[MAX_SPOTS][MAX_SPOTS][MAX_TREES];  // parent[p][child_index][tree] stores children per tree
-int parentCount[MAX_SPOTS][MAX_TREES];  // Count of children for each spot on each tree
-int visited[MAX_SPOTS][MAX_TREES];
+Edge* connections[MAX_SPOTS];
+int treesAtSpot[MAX_SPOTS][MAX_TREES];
+int treeCountAtSpot[MAX_SPOTS];
+int children[MAX_SPOTS][MAX_SPOTS][MAX_TREES];
+int childCount[MAX_SPOTS][MAX_TREES];
+int alreadyVisited[MAX_SPOTS][MAX_TREES];
 
 PriorityQueue* createPQ() {
     PriorityQueue* pq = (PriorityQueue*)malloc(sizeof(PriorityQueue));
     pq->capacity = 10000;
     pq->size = 0;
-    pq->data = (State*)malloc(pq->capacity * sizeof(State));
+    pq->data = (MonkeyState*)malloc(pq->capacity * sizeof(MonkeyState));
     return pq;
 }
 
-void swap(State* a, State* b) {
-    State temp = *a;
+void swap(MonkeyState* a, MonkeyState* b) {
+    MonkeyState temp = *a;
     *a = *b;
     *b = temp;
 }
 
 void heapifyUp(PriorityQueue* pq, int idx) {
     while (idx > 0) {
-        int parent = (idx - 1) / 2;
-        if (pq->data[idx].energy < pq->data[parent].energy) {
-            swap(&pq->data[idx], &pq->data[parent]);
-            idx = parent;
+        int parentIdx = (idx - 1) / 2;
+        if (pq->data[idx].energyUsed < pq->data[parentIdx].energyUsed) {
+            swap(&pq->data[idx], &pq->data[parentIdx]);
+            idx = parentIdx;
         } else {
             break;
         }
@@ -62,9 +62,9 @@ void heapifyDown(PriorityQueue* pq, int idx) {
         int left = 2 * idx + 1;
         int right = 2 * idx + 2;
         
-        if (left < pq->size && pq->data[left].energy < pq->data[smallest].energy)
+        if (left < pq->size && pq->data[left].energyUsed < pq->data[smallest].energyUsed)
             smallest = left;
-        if (right < pq->size && pq->data[right].energy < pq->data[smallest].energy)
+        if (right < pq->size && pq->data[right].energyUsed < pq->data[smallest].energyUsed)
             smallest = right;
             
         if (smallest != idx) {
@@ -76,18 +76,18 @@ void heapifyDown(PriorityQueue* pq, int idx) {
     }
 }
 
-void push(PriorityQueue* pq, State s) {
+void push(PriorityQueue* pq, MonkeyState s) {
     if (pq->size >= pq->capacity) {
         pq->capacity *= 2;
-        pq->data = (State*)realloc(pq->data, pq->capacity * sizeof(State));
+        pq->data = (MonkeyState*)realloc(pq->data, pq->capacity * sizeof(MonkeyState));
     }
     pq->data[pq->size] = s;
     heapifyUp(pq, pq->size);
     pq->size++;
 }
 
-State pop(PriorityQueue* pq) {
-    State result = pq->data[0];
+MonkeyState pop(PriorityQueue* pq) {
+    MonkeyState result = pq->data[0];
     pq->data[0] = pq->data[pq->size - 1];
     pq->size--;
     heapifyDown(pq, 0);
@@ -100,86 +100,81 @@ int isEmpty(PriorityQueue* pq) {
 
 void addEdge(int from, int to) {
     Edge* newEdge = (Edge*)malloc(sizeof(Edge));
-    newEdge->to = to;
-    newEdge->next = adjList[from];
-    adjList[from] = newEdge;
+    newEdge->destination = to;
+    newEdge->next = connections[from];
+    connections[from] = newEdge;
 }
 
-void addSpotToTree(int spot, int tree) {
-    for (int i = 0; i < spotTreeCount[spot]; i++) {
-        if (spotTrees[spot][i] == tree) return;
+void addSpotToTree(int spot, int treeId) {
+    for (int i = 0; i < treeCountAtSpot[spot]; i++) {
+        if (treesAtSpot[spot][i] == treeId) return;
     }
-    spotTrees[spot][spotTreeCount[spot]++] = tree;
+    treesAtSpot[spot][treeCountAtSpot[spot]++] = treeId;
 }
 
-void addParentChild(int p, int c, int tree) {
-    parent[p][parentCount[p][tree]++][tree] = c;
+void addParentChild(int parentSpot, int childSpot, int treeId) {
+    children[parentSpot][childCount[parentSpot][treeId]++][treeId] = childSpot;
 }
 
-int isParent(int p, int c, int tree) {
-    for (int i = 0; i < parentCount[p][tree]; i++) {
-        if (parent[p][i][tree] == c) return 1;
+int isParent(int parentSpot, int childSpot, int treeId) {
+    for (int i = 0; i < childCount[parentSpot][treeId]; i++) {
+        if (children[parentSpot][i][treeId] == childSpot) return 1;
     }
     return 0;
 }
 
 int findMinEnergy(int start, int destination) {
-    memset(visited, 0, sizeof(visited));
+    memset(alreadyVisited, 0, sizeof(alreadyVisited));
     PriorityQueue* pq = createPQ();
     
-    for (int i = 0; i < spotTreeCount[start]; i++) {
-        State s = {start, 0, spotTrees[start][i]};
+    for (int i = 0; i < treeCountAtSpot[start]; i++) {
+        MonkeyState s = {start, 0, treesAtSpot[start][i]};
         push(pq, s);
     }
     
     while (!isEmpty(pq)) {
-        State current = pop(pq);
+        MonkeyState current = pop(pq);
         
-        if (current.spot == destination) {
+        if (current.location == destination) {
             free(pq->data);
             free(pq);
-            return current.energy;
+            return current.energyUsed;
         }
         
-        if (visited[current.spot][current.tree]) continue;
-        visited[current.spot][current.tree] = 1;
+        if (alreadyVisited[current.location][current.currentTree]) continue;
+        alreadyVisited[current.location][current.currentTree] = 1;
         
-        // First, consider switching trees at the current spot
-        for (int i = 0; i < spotTreeCount[current.spot]; i++) {
-            int newTree = spotTrees[current.spot][i];
-            if (newTree != current.tree && !visited[current.spot][newTree]) {
-                State newState = {current.spot, current.energy + 1, newTree};
+        for (int i = 0; i < treeCountAtSpot[current.location]; i++) {
+            int newTree = treesAtSpot[current.location][i];
+            if (newTree != current.currentTree && !alreadyVisited[current.location][newTree]) {
+                MonkeyState newState = {current.location, current.energyUsed + 1, newTree};
                 push(pq, newState);
             }
         }
         
-        // Now consider moving to adjacent spots on the current tree
-        Edge* edge = adjList[current.spot];
+        Edge* edge = connections[current.location];
         while (edge != NULL) {
-            int neighbor = edge->to;
+            int neighbor = edge->destination;
             
-            // Check if neighbor is on the current tree
-            int neighborOnCurrentTree = 0;
-            for (int i = 0; i < spotTreeCount[neighbor]; i++) {
-                if (spotTrees[neighbor][i] == current.tree) {
-                    neighborOnCurrentTree = 1;
+            int neighborHasTree = 0;
+            for (int i = 0; i < treeCountAtSpot[neighbor]; i++) {
+                if (treesAtSpot[neighbor][i] == current.currentTree) {
+                    neighborHasTree = 1;
                     break;
                 }
             }
             
-            if (neighborOnCurrentTree) {
+            if (neighborHasTree) {
                 int energyCost = 0;
                 
-                // Check if climbing up (neighbor is parent of current on this tree)
-                if (isParent(neighbor, current.spot, current.tree)) {
+                if (isParent(neighbor, current.location, current.currentTree)) {
                     energyCost = 1;
                 }
-                // Otherwise climbing down, cost = 0
                 
-                int newEnergy = current.energy + energyCost;
+                int newEnergy = current.energyUsed + energyCost;
                 
-                if (!visited[neighbor][current.tree]) {
-                    State newState = {neighbor, newEnergy, current.tree};
+                if (!alreadyVisited[neighbor][current.currentTree]) {
+                    MonkeyState newState = {neighbor, newEnergy, current.currentTree};
                     push(pq, newState);
                 }
             }
@@ -198,56 +193,54 @@ int main() {
     scanf("%d", &n);
     getchar();
     
-    memset(adjList, 0, sizeof(adjList));
-    memset(spotTreeCount, 0, sizeof(spotTreeCount));
-    memset(parentCount, 0, sizeof(parentCount));
+    memset(connections, 0, sizeof(connections));
+    memset(treeCountAtSpot, 0, sizeof(treeCountAtSpot));
+    memset(childCount, 0, sizeof(childCount));
     
-    int currentTree = 0;
+    int treeNumber = 0;
     
     for (int i = 0; i < n; i++) {
         char line[1000];
         fgets(line, sizeof(line), stdin);
         
-        // Remove newline
         line[strcspn(line, "\n")] = 0;
         
         if (strcmp(line, "break") == 0) {
-            currentTree++;
+            treeNumber++;
             continue;
         }
         
         int spots[100];
-        int count = 0;
+        int spotCount = 0;
         char* token = strtok(line, " ");
         
         while (token != NULL) {
-            spots[count++] = atoi(token);
+            spots[spotCount++] = atoi(token);
             token = strtok(NULL, " ");
         }
         
-        if (count > 0) {
-            int p = spots[0];
+        if (spotCount > 0) {
+            int parentSpot = spots[0];
             
-            for (int j = 1; j < count; j++) {
-                int child = spots[j];
-                addEdge(p, child);
-                addEdge(child, p);
-                addSpotToTree(p, currentTree);
-                addSpotToTree(child, currentTree);
-                addParentChild(p, child, currentTree);
+            for (int j = 1; j < spotCount; j++) {
+                int childSpot = spots[j];
+                addEdge(parentSpot, childSpot);
+                addEdge(childSpot, parentSpot);
+                addSpotToTree(parentSpot, treeNumber);
+                addSpotToTree(childSpot, treeNumber);
+                addParentChild(parentSpot, childSpot, treeNumber);
             }
         }
     }
     
-    int start, destination;
-    scanf("%d %d", &start, &destination);
+    int startSpot, endSpot;
+    scanf("%d %d", &startSpot, &endSpot);
     
-    int result = findMinEnergy(start, destination);
+    int result = findMinEnergy(startSpot, endSpot);
     printf("%d\n", result);
     
-    // Free memory
     for (int i = 0; i < MAX_SPOTS; i++) {
-        Edge* edge = adjList[i];
+        Edge* edge = connections[i];
         while (edge != NULL) {
             Edge* temp = edge;
             edge = edge->next;
