@@ -1,0 +1,19 @@
+============================================================
+LINEAR REGRESSION MODEL - PERFORMANCE METRICS
+Advertising Dataset - Sales Prediction
+============================================================
+
+R2 Score:                    0.7880
+Mean Absolute Error (MAE):   2.11k units
+Mean Squared Error (MSE):    6.21
+Root Mean Squared Error:     2.49k units
+Mean Absolute % Error:       14.28%
+
+============================================================
+INTERPRETATION
+============================================================
+[+] Good model fit (R2 = 0.7880)
+Linear regression well explains the relationship
+
+On average, predictions are off by 2.11k units
+This represents a 14.28% error rate.

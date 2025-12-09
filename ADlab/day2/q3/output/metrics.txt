@@ -1,0 +1,19 @@
+============================================================
+LINEAR REGRESSION MODEL - TIME SERIES FORECASTING
+Temperature Prediction
+============================================================
+
+R2 Score:                    0.6093
+Mean Absolute Error (MAE):   1.99 degrees
+Mean Squared Error (MSE):    6.58
+Root Mean Squared Error:     2.57 degrees
+Mean Absolute % Error:       24.84%
+
+============================================================
+INTERPRETATION
+============================================================
+[+] Good model fit (R2 = 0.6093)
+Linear regression well models time series trends
+
+On average, predictions are off by 1.99 degrees
+This represents a 24.84% error rate.

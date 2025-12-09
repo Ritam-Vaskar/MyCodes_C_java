@@ -1,0 +1,18 @@
+============================================================
+LINEAR REGRESSION MODEL - PERFORMANCE METRICS
+Boston Housing Dataset
+============================================================
+
+R2 Score:                    0.6688
+Mean Absolute Error (MAE):   $3.19k
+Mean Squared Error (MSE):    24.29
+Root Mean Squared Error:     $4.93k
+Mean Absolute % Error:       16.87%
+
+============================================================
+INTERPRETATION
+============================================================
+[+] Good model fit (R2 = 0.6688)
+
+On average, predictions are off by $3.19k
+This represents a 16.87% error rate.

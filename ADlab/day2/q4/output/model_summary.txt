@@ -1,0 +1,73 @@
+================================================================================
+STUDENT PERFORMANCE ANALYSIS - MODEL SUMMARY
+================================================================================
+
+RESEARCH QUESTION:
+How do factors such as study hours, attendance, socioeconomic background,
+and parental education impact academic performance?
+
+DATASET INFORMATION:
+Total Students: 400
+Total Features: 33
+Training Samples: 320
+Test Samples: 80
+
+MODEL CONFIGURATION:
+Algorithm: Linear Regression
+Feature Normalization: Yes (StandardScaler)
+Target Variable: G3 (Final Grade)
+Model Intercept: 10.0244
+
+PERFORMANCE METRICS:
+R2 Score: 0.4660
+MAE: 1.6568
+MSE: 4.1230
+RMSE: 2.0305
+MAPE: 24.7214
+Within 1 Point: 36.2500
+Within 2 Points: 66.2500
+
+================================================================================
+TOP 10 MOST INFLUENTIAL FEATURES:
+================================================================================
+33. grade_trend               :     0.9864
+15. failures                  :    -0.7623
+27. Dalc                      :    -0.4709
+14. studytime                 :     0.4327
+28. Walc                      :    -0.4229
+30. absences                  :    -0.2832
+ 9. Mjob                      :     0.2759
+29. health                    :     0.2481
+32. avg_parent_edu            :     0.2454
+ 7. Medu                      :     0.2383
+
+================================================================================
+FEATURE GROUP ANALYSIS:
+================================================================================
+
+5. BEHAVIORAL
+   Total Impact: 1.5901
+   Avg Impact: 0.2650
+   Features: 6
+
+3. ACADEMIC
+   Total Impact: 1.4750
+   Avg Impact: 0.2458
+   Features: 6
+
+2. FAMILY_BACKGROUND
+   Total Impact: 0.9443
+   Avg Impact: 0.1574
+   Features: 6
+
+4. SOCIAL
+   Total Impact: 0.5527
+   Avg Impact: 0.0921
+   Features: 6
+
+1. DEMOGRAPHIC
+   Total Impact: 0.3479
+   Avg Impact: 0.0696
+   Features: 5
+
+================================================================================
