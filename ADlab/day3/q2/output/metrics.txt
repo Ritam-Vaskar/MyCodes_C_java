@@ -1,0 +1,30 @@
+IRIS SPECIES CLASSIFICATION - MODEL METRICS
+======================================================================
+
+Accuracy: 88.89%
+
+Confusion Matrix:
+                    Predicted
+              Setosa  Versicolor  Virginica
+Actual setosa         15         0          0
+Actual versicolor      0        12          3
+Actual virginica       0         2         13
+
+
+Classification Report:
+              precision    recall  f1-score   support
+
+      setosa     1.0000    1.0000    1.0000        15
+  versicolor     0.8571    0.8000    0.8276        15
+   virginica     0.8125    0.8667    0.8387        15
+
+    accuracy                         0.8889        45
+   macro avg     0.8899    0.8889    0.8888        45
+weighted avg     0.8899    0.8889    0.8888        45
+
+
+Feature Importance:
+  Feature 0                : 0.0000
+  Feature 1                : 0.0145
+  Feature 2                : 0.5490
+  Feature 3                : 0.4365

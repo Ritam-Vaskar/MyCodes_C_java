@@ -1,0 +1,20 @@
+SPAM EMAIL CLASSIFICATION - MODEL METRICS
+======================================================================
+
+Accuracy: 97.40%
+
+Confusion Matrix:
+                 Predicted
+              Non-Spam  Spam
+Actual Non-Spam    966       0
+       Spam         29     120
+
+Classification Report:
+              precision    recall  f1-score   support
+
+    Non-Spam     0.9709    1.0000    0.9852       966
+        Spam     1.0000    0.8054    0.8922       149
+
+    accuracy                         0.9740      1115
+   macro avg     0.9854    0.9027    0.9387      1115
+weighted avg     0.9747    0.9740    0.9728      1115
