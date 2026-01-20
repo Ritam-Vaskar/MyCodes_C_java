@@ -1,0 +1,25 @@
+GMM VS K-MEANS CLUSTERING ON IRIS DATASET
+======================================================================
+
+Number of Clusters/Components: 3
+Dataset size: 150
+
+PERFORMANCE METRICS:
+         Method  Silhouette  Davies-Bouldin      ARI  Homogeneity  Completeness  V-Measure
+        K-Means    0.459948        0.833595 0.620135     0.659127      0.659848   0.659487
+     GMM (Full)    0.374165        1.080933 0.903874     0.898326      0.901065   0.899694
+ GMM (Diagonal)    0.413480        0.920779 0.818006     0.811262      0.814831   0.813043
+     GMM (Tied)    0.390998        1.032932 0.903714     0.880057      0.880164   0.880111
+GMM (Spherical)    0.456634        0.832277 0.641006     0.672803      0.672885   0.672844
+
+GMM BIC: 801.55
+GMM AIC: 669.08
+GMM Log-Likelihood: -290.54
+
+Average prediction uncertainty: 0.0099
+
+CONCLUSION:
+GMM provides probabilistic cluster assignments and better handles
+elliptical clusters. K-Means is faster but assumes spherical clusters.
+For Iris dataset, both perform well, but GMM provides additional insights
+through probability distributions and uncertainty measures.

@@ -1,0 +1,18 @@
+K-MEANS CLUSTERING ON MALL CUSTOMERS DATASET
+======================================================================
+
+Number of Clusters: 5
+Number of Customers: 200
+
+PERFORMANCE METRICS:
+Silhouette Score: 0.5399
+Davies-Bouldin Index: 0.7338
+Inertia: 48.3190
+
+CLUSTER CENTERS (Original Scale):
+   Annual Income (k$)  Spending Score (1-100)
+0           82.625000               79.958333
+1          105.060000               21.740000
+2           33.400000               23.560000
+3           31.940000               80.740000
+4          115.461538               82.769231

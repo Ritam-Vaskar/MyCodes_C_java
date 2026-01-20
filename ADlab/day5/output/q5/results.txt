@@ -1,0 +1,23 @@
+K-MEANS CLUSTERING ON DIGITS DATASET
+======================================================================
+
+Number of Clusters: 10
+Dataset Size: 1797
+Number of Features: 64
+
+PERFORMANCE METRICS:
+  Adjusted Rand Index: 0.5344
+  Normalized Mutual Information: 0.6712
+  Homogeneity: 0.6498
+  Completeness: 0.6941
+  V-Measure: 0.6712
+  Silhouette Score: 0.1394
+
+Clustering Accuracy: 68.22%
+
+CONCLUSION:
+K-Means is MODERATELY effective at grouping handwritten digits.
+
+The algorithm can identify general patterns in digit shapes,
+but may struggle with digits that have similar visual features
+or significant variation in writing style.

@@ -1,0 +1,14 @@
+K-MEANS VS HIERARCHICAL CLUSTERING ON WHOLESALE CUSTOMERS
+======================================================================
+
+Number of Clusters: 4
+Number of Customers: 440
+
+CONSISTENCY ANALYSIS (Adjusted Rand Index):
+K-Means vs Hierarchical (Ward): 0.5829
+K-Means vs Hierarchical (Complete): 0.1378
+K-Means vs Hierarchical (Average): 0.0793
+
+CONCLUSION:
+MODERATE consistency between K-Means and Hierarchical clustering.
+Ward linkage shows the best agreement with K-Means.

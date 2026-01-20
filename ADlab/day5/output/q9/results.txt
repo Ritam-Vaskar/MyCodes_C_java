@@ -1,0 +1,15 @@
+PSO-OPTIMIZED K-MEANS ON WINE DATASET
+======================================================================
+
+PERFORMANCE METRICS:
+    Metric    PSO-Init   K-Means++  Random (avg)
+   Inertia 1279.966153 1277.928489   1294.634360
+Silhouette    0.284421    0.284859      0.279245
+       ARI    0.880400    0.897495      0.864461
+
+CONCLUSION:
+K-Means++ performs comparable to or better than PSO.
+
+PSO can find good initial centroids but adds computational cost.
+K-Means++ is often sufficient for most datasets.
+PSO may be beneficial for very difficult clustering problems.

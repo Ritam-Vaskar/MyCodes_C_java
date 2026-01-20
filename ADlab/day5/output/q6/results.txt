@@ -1,0 +1,21 @@
+SPECTRAL CLUSTERING ON IRIS DATASET
+======================================================================
+
+Number of Clusters: 3
+Dataset Size: 150
+
+PERFORMANCE METRICS:
+         Method  Silhouette  Davies-Bouldin      ARI  Homogeneity  Completeness  V-Measure
+ Spectral (RBF)    0.462976        0.825716 0.645142     0.682362      0.696819   0.689515
+Spectral (K-NN)    0.459301        0.822362 0.646487     0.673701      0.694131   0.683763
+        K-Means    0.459948        0.833595 0.620135     0.659127      0.659848   0.659487
+   Hierarchical    0.446689        0.803467 0.615323     0.657882      0.694025   0.675470
+
+Best Spectral ARI: 0.6465
+Best Distance-based ARI: 0.6201
+
+CONCLUSION:
+Spectral clustering uses graph theory and can handle non-convex clusters.
+For Iris dataset with well-separated spherical clusters, both spectral
+and distance-based methods perform well. Spectral may offer slight
+advantages but requires more computation.

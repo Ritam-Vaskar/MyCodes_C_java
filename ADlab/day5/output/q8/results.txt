@@ -1,0 +1,18 @@
+CLUSTERING STABILITY ANALYSIS
+======================================================================
+
+SAMPLING STABILITY:
+ Sampling Ratio  Mean ARI  Std ARI  Min ARI  Max ARI
+            0.5  0.909109 0.086830 0.763536      1.0
+            0.6  0.947079 0.080930 0.745350      1.0
+            0.7  0.916700 0.088801 0.774912      1.0
+            0.8  0.954979 0.072617 0.778919      1.0
+            0.9  0.981669 0.036452 0.815118      1.0
+
+BOOTSTRAP STABILITY:
+Mean ARI: 0.9171
+Std ARI: 0.0820
+95% CI: [0.7758, 1.0000]
+
+CONCLUSION:
+HIGH stability - clustering is robust to sampling variations.

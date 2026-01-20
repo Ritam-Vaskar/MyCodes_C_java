@@ -1,0 +1,22 @@
+FUZZY C-MEANS CLUSTERING ON IRIS DATASET
+======================================================================
+
+PERFORMANCE METRICS:
+       Method      ARI  Silhouette
+Fuzzy C-Means 0.630339    0.458442
+      K-Means 0.620135    0.459948
+
+Fuzzy Partition Coefficient: 0.7065
+Average Uncertainty: 0.1948
+Samples in overlapping regions: 28 (18.67%)
+
+CONCLUSION:
+Fuzzy C-Means handles overlapping classes by providing soft membership degrees.
+Unlike K-Means (hard clustering), FCM allows samples to belong to multiple clusters.
+This is particularly useful for:
+  - Identifying boundary/uncertain samples
+  - Handling overlapping class distributions
+  - Providing confidence in cluster assignments
+
+For Iris dataset, Versicolor and Virginica classes have some overlap,
+which Fuzzy C-Means successfully captures through membership degrees.

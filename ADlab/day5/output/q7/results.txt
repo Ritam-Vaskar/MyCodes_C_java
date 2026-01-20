@@ -1,0 +1,26 @@
+DBSCAN ON TWO MOONS SYNTHETIC DATASET
+======================================================================
+
+Dataset Size: 300
+Noise Level: 0.1
+
+ALGORITHM COMPARISON:
+      Method  Clusters      ARI  Silhouette
+      DBSCAN         2 0.986666    0.250332
+     K-Means         2 0.478969    0.490996
+Hierarchical         2 0.715917    0.448466
+    Spectral         2 0.516784    0.490174
+
+CONCLUSION:
+Best performing method: DBSCAN (ARI=0.9867)
+
+YES, DBSCAN successfully identifies irregular-shaped clusters!
+
+DBSCAN advantages for Two Moons dataset:
+  - Can detect non-convex (crescent) shapes
+  - Identifies noise points
+  - No need to specify number of clusters
+  - Robust to outliers
+
+K-Means struggles with non-spherical clusters.
+Spectral clustering can also handle complex shapes.

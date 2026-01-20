@@ -1,0 +1,17 @@
+DBSCAN CLUSTERING ON IRIS DATASET
+======================================================================
+
+Best Epsilon: 0.8
+Best Min Samples: 3
+
+Number of Clusters Found: 2
+Number of Noise Points: 4
+Percentage of Noise: 2.67%
+
+Silhouette Score: 0.5217
+Adjusted Rand Index: 0.5518
+
+CONCLUSION:
+DBSCAN successfully identifies natural clusters in the Iris dataset.
+The algorithm can detect noise points and handle non-spherical clusters.
+Performance depends heavily on epsilon and min_samples parameters.
