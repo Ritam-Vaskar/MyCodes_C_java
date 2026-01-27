@@ -1,0 +1,14 @@
+SVM Classification with PCA on Breast Cancer Dataset
+============================================================
+
+Original features: 30
+Tested PCA components: [2, 5, 10, 15]
+
+Accuracy with all features: 0.9825
+Best PCA configuration: 15 components
+Best PCA accuracy: 0.9825
+Variance explained at best k: 0.9868
+
+Conclusion:
+PCA with 15 components maintains or improves accuracy
+while reducing dimensionality by 50.0%

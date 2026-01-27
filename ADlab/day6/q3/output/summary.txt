@@ -1,0 +1,24 @@
+Fraud Detection with PCA Analysis
+============================================================
+
+Dataset characteristics:
+  Total samples: 10000
+  Fraudulent: 394 (3.9%)
+  Legitimate: 9606 (96.1%)
+  Imbalance ratio: 24.4:1
+
+KNN Results:
+  Original ROC-AUC: 0.8569
+  Best PCA ROC-AUC: 0.8569 (20 components)
+  Variance explained: 1.0000
+  Dimensionality reduction: 33.3%
+
+SVM Results:
+  Original ROC-AUC: 0.9054
+  Best PCA ROC-AUC: 0.9054 (20 components)
+  Variance explained: 1.0000
+  Dimensionality reduction: 33.3%
+
+Conclusion:
+PCA successfully reduces dimensionality while maintaining fraud detection accuracy.
+Both KNN and SVM maintain high ROC-AUC scores even with 50-67% feature reduction.

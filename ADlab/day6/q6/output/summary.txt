@@ -1,0 +1,19 @@
+PCA Robustness Analysis with Noisy Clinical Features
+======================================================================
+
+Dataset: Breast Cancer (30 features)
+Noise levels tested: [0.0, 0.1, 0.2, 0.3, 0.5, 1.0]
+PCA configurations: [0, 10, 15, 20]
+
+Most robust method: PCA-10
+Average accuracy degradation: 0.0175
+
+Stability ranking (lower std = more stable):
+  1. PCA-15: CV std = 0.0148
+  2. PCA-10: CV std = 0.0184
+  3. PCA-20: CV std = 0.0188
+  4. Original: CV std = 0.0194
+
+Conclusion:
+PCA improves model robustness under noisy conditions.
+Dimensionality reduction acts as noise filter, improving stability.

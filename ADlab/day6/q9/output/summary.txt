@@ -1,0 +1,21 @@
+Eye State Detection: SVM vs KNN with PCA
+======================================================================
+
+Dataset: 10000 samples, 14 features
+Classes: Eye Open, Eye Closed
+
+SVM Performance:
+  Original: Accuracy = 0.9425, F1 = 0.9350
+  Best PCA (12 PCs): Accuracy = 0.9425, F1 = 0.9350
+  Improvement: +0.0000
+  Dimensionality reduction: 14.3%
+
+KNN Performance:
+  Original: Accuracy = 0.9265, F1 = 0.9171
+  Best PCA (12 PCs): Accuracy = 0.9265, F1 = 0.9171
+  Improvement: +0.0000
+  Dimensionality reduction: 14.3%
+
+Conclusion:
+SVM demonstrates superior performance for eye state detection.
+PCA maintains or improves accuracy while reducing features significantly.

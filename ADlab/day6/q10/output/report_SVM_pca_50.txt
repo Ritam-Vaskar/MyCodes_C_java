@@ -1,0 +1,16 @@
+Classification Report - SVM with PCA (50 bands)
+======================================================================
+
+              precision    recall  f1-score   support
+
+       Water       0.75      0.79      0.77       229
+      Forest       0.76      0.83      0.79       229
+       Urban       0.77      0.84      0.81       229
+ Agriculture       0.80      0.74      0.77       229
+   Grassland       0.84      0.76      0.80       228
+      Barren       0.82      0.80      0.81       228
+     Wetland       0.81      0.78      0.79       228
+
+    accuracy                           0.79      1600
+   macro avg       0.79      0.79      0.79      1600
+weighted avg       0.79      0.79      0.79      1600

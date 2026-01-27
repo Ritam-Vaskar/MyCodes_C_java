@@ -1,0 +1,16 @@
+Classification Report - Random Forest with PCA (5 bands)
+======================================================================
+
+              precision    recall  f1-score   support
+
+       Water       0.16      0.15      0.15       229
+      Forest       0.21      0.20      0.21       229
+       Urban       0.26      0.28      0.27       229
+ Agriculture       0.22      0.28      0.25       229
+   Grassland       0.17      0.16      0.17       228
+      Barren       0.23      0.22      0.23       228
+     Wetland       0.30      0.29      0.29       228
+
+    accuracy                           0.22      1600
+   macro avg       0.22      0.22      0.22      1600
+weighted avg       0.22      0.22      0.22      1600

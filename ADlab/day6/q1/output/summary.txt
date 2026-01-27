@@ -1,0 +1,11 @@
+PCA Analysis on Wine Dataset
+============================================================
+
+Original dimensions: 13
+Number of samples: 178
+Number of classes: 3
+
+Variance explained by first 2 PCs: 55.41%
+Variance explained by first 3 PCs: 66.53%
+Components needed for 95% variance: 10
+Components needed for 99% variance: 12

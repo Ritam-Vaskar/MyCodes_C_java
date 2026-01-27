@@ -1,0 +1,11 @@
+Classification Report with 5 Principal Components
+============================================================
+
+              precision    recall  f1-score   support
+
+   malignant       0.91      0.95      0.93        42
+      benign       0.97      0.94      0.96        72
+
+    accuracy                           0.95       114
+   macro avg       0.94      0.95      0.94       114
+weighted avg       0.95      0.95      0.95       114

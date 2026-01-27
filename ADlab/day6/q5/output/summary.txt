@@ -1,0 +1,22 @@
+Digit Recognition with PCA - Optimal Components Analysis
+======================================================================
+
+Dataset: 1797 samples, 64 features, 10 classes
+
+Original Performance:
+  Features: 64
+  Accuracy: 0.9639
+
+Optimal Component Selection:
+  For 95% accuracy retention: 8 components (87.5% reduction)
+  For 98% accuracy retention: 15 components (76.6% reduction)
+  For 99% accuracy retention: 15 components (76.6% reduction)
+
+Variance-based Selection:
+  For 90% variance: 35 components
+  For 95% variance: 40 components
+  For 99% variance: 55 components
+
+Recommendation:
+  Use 8-15 components for optimal balance between
+  dimensionality reduction and accuracy retention.
