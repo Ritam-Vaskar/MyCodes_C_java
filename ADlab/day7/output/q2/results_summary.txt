@@ -1,0 +1,15 @@
+PSO vs Adam Comparison Results
+======================================================================
+
+PSO Results:
+  Training Accuracy: 0.2604
+  Test Accuracy: 0.2410
+  Training Time: 9.64s
+
+Adam Results:
+  Training Accuracy: 0.9860
+  Test Accuracy: 0.9120
+  Training Time: 14.14s
+
+Winner:
+  Adam achieves higher test accuracy (0.9120 vs 0.2410)
