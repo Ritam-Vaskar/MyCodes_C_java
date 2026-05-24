@@ -192,9 +192,21 @@ struct TripResult {
     vector<int> missed;
 };
 
+static void order_trip(vector<int> &trip, const vector<Delivery> &deliveries, const Point &warehouse);
+static TripResult simulate_trip(const vector<int> &trip,
+                                const vector<Delivery> &deliveries,
+                                const Point &warehouse,
+                                const vector<Point> &charging_stations,
+                                const vector<NFZ> &nfzs,
+                                double start_time);
+
 static vector<int> build_trip(const vector<int> &remaining,
                               const vector<Delivery> &deliveries,
-                              const Drone &drone) {
+                              const Drone &drone,
+                              const Point &warehouse,
+                              const vector<Point> &charging_stations,
+                              const vector<NFZ> &nfzs,
+                              double start_time) {
     vector<int> candidates = remaining;
     sort(candidates.begin(), candidates.end(), [&](int a, int b) {
         return deliveries[a].deadline < deliveries[b].deadline;
@@ -207,13 +219,20 @@ static vector<int> build_trip(const vector<int> &remaining,
         if (payload + del.weight > drone.max_payload + EPS) {
             continue;
         }
-        double dist_to_del = dist_pt(Point{0, 0}, Point{del.x, del.y});
+        double dist_to_del = dist_pt(warehouse, Point{del.x, del.y});
         double energy_to_del = dist_to_del * (1.0 + payload + del.weight);
         double energy_to_wh = dist_to_del;
         if (energy_to_del + energy_to_wh > BATTERY_CAPACITY + EPS) {
             continue;
         }
-        trip.push_back(idx);
+        vector<int> trial = trip;
+        trial.push_back(idx);
+        order_trip(trial, deliveries, warehouse);
+        TripResult sim = simulate_trip(trial, deliveries, warehouse, charging_stations, nfzs, start_time);
+        if (sim.infeasible) {
+            continue;
+        }
+        trip.swap(trial);
         payload += del.weight;
     }
     return trip;
@@ -428,9 +447,8 @@ int main() {
     while (progress && !remaining.empty()) {
         progress = false;
         for (int di = 0; di < (int)drones.size(); ++di) {
-            vector<int> trip = build_trip(remaining, deliveries, drones[di]);
+            vector<int> trip = build_trip(remaining, deliveries, drones[di], warehouse, charging_stations, nfzs, drone_times[di]);
             if (trip.empty()) continue;
-            order_trip(trip, deliveries, warehouse);
 
             TripResult res = simulate_trip(trip, deliveries, warehouse, charging_stations, nfzs, drone_times[di]);
             if (res.infeasible) {
