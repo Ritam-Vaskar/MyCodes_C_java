@@ -211,41 +211,81 @@ static vector<int> build_trip(const vector<int> &remaining,
     sort(candidates.begin(), candidates.end(), [&](int a, int b) {
         return deliveries[a].deadline < deliveries[b].deadline;
     });
+    const int max_candidates = 12;
+    const int max_trip_size = 2;
+    if ((int)candidates.size() > max_candidates) {
+        candidates.resize(max_candidates);
+    }
 
     vector<int> trip;
-    double payload = 0.0;
+    int best_idx = -1;
+    double best_end = 1e30;
+
     for (int idx : candidates) {
         const Delivery &del = deliveries[idx];
-        if (payload + del.weight > drone.max_payload + EPS) {
+        if (del.weight > drone.max_payload + EPS) {
             continue;
         }
-        double dist_to_del = dist_pt(warehouse, Point{del.x, del.y});
-        double energy_to_del = dist_to_del * (1.0 + payload + del.weight);
-        double energy_to_wh = dist_to_del;
-        if (energy_to_del + energy_to_wh > BATTERY_CAPACITY + EPS) {
+        if (start_time + dist_pt(warehouse, Point{del.x, del.y}) > del.deadline + EPS) {
             continue;
         }
-        vector<int> trial = trip;
-        trial.push_back(idx);
-        order_trip(trial, deliveries, warehouse);
+        vector<int> trial(1, idx);
         TripResult sim = simulate_trip(trial, deliveries, warehouse, charging_stations, nfzs, start_time);
-        if (sim.infeasible) {
+        if (sim.infeasible || (int)sim.delivered.size() < 1) {
             continue;
         }
-        trip.swap(trial);
-        payload += del.weight;
+        if (sim.end_time + EPS < best_end) {
+            best_end = sim.end_time;
+            best_idx = idx;
+        }
     }
+
+    if (best_idx == -1) {
+        return trip;
+    }
+    trip.push_back(best_idx);
+
+    if ((int)trip.size() < max_trip_size) {
+        int best_second = -1;
+        double best_pair_end = 1e30;
+        for (int idx : candidates) {
+            if (idx == best_idx) continue;
+            const Delivery &del = deliveries[idx];
+            if (deliveries[best_idx].weight + del.weight > drone.max_payload + EPS) {
+                continue;
+            }
+            vector<int> trial = trip;
+            trial.push_back(idx);
+            order_trip(trial, deliveries, warehouse);
+            TripResult sim = simulate_trip(trial, deliveries, warehouse, charging_stations, nfzs, start_time);
+            if (sim.infeasible || (int)sim.delivered.size() < 2) {
+                continue;
+            }
+            if (sim.end_time + EPS < best_pair_end) {
+                best_pair_end = sim.end_time;
+                best_second = idx;
+            }
+        }
+        if (best_second != -1) {
+            trip.push_back(best_second);
+            order_trip(trip, deliveries, warehouse);
+        }
+    }
+
     return trip;
 }
 
 static void order_trip(vector<int> &trip, const vector<Delivery> &deliveries, const Point &warehouse) {
     sort(trip.begin(), trip.end(), [&](int a, int b) {
-        if (fabs(deliveries[a].weight - deliveries[b].weight) > EPS) {
-            return deliveries[a].weight > deliveries[b].weight;
-        }
         double da = dist_pt(warehouse, Point{deliveries[a].x, deliveries[a].y});
         double db = dist_pt(warehouse, Point{deliveries[b].x, deliveries[b].y});
-        return da < db;
+        if (fabs(deliveries[a].deadline - deliveries[b].deadline) > EPS) {
+            return deliveries[a].deadline < deliveries[b].deadline;
+        }
+        if (fabs(da - db) > EPS) {
+            return da < db;
+        }
+        return deliveries[a].weight > deliveries[b].weight;
     });
 }
 
@@ -452,13 +492,6 @@ int main() {
 
             TripResult res = simulate_trip(trip, deliveries, warehouse, charging_stations, nfzs, drone_times[di]);
             if (res.infeasible) {
-                vector<int> filtered;
-                for (int idx : remaining) {
-                    if (find(res.missed.begin(), res.missed.end(), idx) == res.missed.end()) {
-                        filtered.push_back(idx);
-                    }
-                }
-                remaining.swap(filtered);
                 continue;
             }
 

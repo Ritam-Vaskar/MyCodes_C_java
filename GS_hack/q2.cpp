@@ -156,8 +156,11 @@ static DayPlan chooseBestDayPlan(const map<int, Activity> &activities,
 	int bestCost = 0;
 	vector<int> bestIds;
 
-	int totalMasks = 1 << n;
-	for (int mask = 0; mask < totalMasks; mask++) {
+	if (n >= 63) {
+		return best;
+	}
+	size_t totalMasks = 1ULL << n;
+	for (size_t mask = 0; mask < totalMasks; mask++) {
 		int cost = 0;
 		int duration = 0;
 		int energy = 0;
@@ -165,7 +168,7 @@ static DayPlan chooseBestDayPlan(const map<int, Activity> &activities,
 		vector<int> ids;
 
 		for (int i = 0; i < n; i++) {
-			if (mask & (1 << i)) {
+			if (mask & (1ULL << i)) {
 				cost += eligible[i].cost;
 				duration += eligible[i].duration;
 				energy += eligible[i].energy;
@@ -177,6 +180,7 @@ static DayPlan chooseBestDayPlan(const map<int, Activity> &activities,
 		if (cost > budget_limit || energy > energy_limit || duration > H) {
 			continue;
 		}
+		sort(ids.begin(), ids.end());
 
 		bool better = false;
 		if (sat > bestSat) {
@@ -212,6 +216,8 @@ static void buildPlanFrom(int startDay,
 						  const vector<User> &users,
 						  const vector<unordered_set<string>> &blockedByDay,
 						  vector<DayPlan> &plan) {
+	if (startDay < 1) startDay = 1;
+	if (startDay > in.D) return;
 	unordered_set<int> used;
 	for (int day = 1; day < startDay; day++) {
 		for (int id : plan[day].ids) used.insert(id);
@@ -232,6 +238,9 @@ static void applyEvent(const string &line,
 	stringstream ss(line);
 	string type;
 	if (!(ss >> type >> eventDay)) {
+		return;
+	}
+	if (eventDay < 1 || eventDay >= (int)blockedByDay.size()) {
 		return;
 	}
 	if (type == "WEATHER") {
