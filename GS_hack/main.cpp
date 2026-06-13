@@ -50,49 +50,51 @@ static double dist_pt(const Point &a, const Point &b) {
     return sqrt(dx * dx + dy * dy);
 }
 
-static bool segment_circle_interval(const Point &a, const Point &b, double cx, double cy, double r, double &s_enter, double &s_exit) {
+// --- NFZ geometric intersection ---
+// Returns parametric s_enter/s_exit in distance units along segment A->B
+// where the segment intersects the NFZ shape.
+
+static bool segment_circle_interval(const Point &a, const Point &b,
+    double cx, double cy, double r, double &s_enter, double &s_exit)
+{
     double dx = b.x - a.x;
     double dy = b.y - a.y;
     double fx = a.x - cx;
     double fy = a.y - cy;
-
     double A = dx * dx + dy * dy;
     if (A < EPS) {
         double dist2 = fx * fx + fy * fy;
-        if (dist2 <= r * r) {
+        if (dist2 <= r * r + EPS) {
             s_enter = 0.0;
             s_exit = 0.0;
             return true;
         }
         return false;
     }
-
     double B = 2.0 * (fx * dx + fy * dy);
     double C = fx * fx + fy * fy - r * r;
     double disc = B * B - 4.0 * A * C;
-    if (disc < 0.0) {
-        return false;
-    }
+    if (disc < 0.0) return false;
 
     double sqrt_disc = sqrt(max(0.0, disc));
     double t1 = (-B - sqrt_disc) / (2.0 * A);
     double t2 = (-B + sqrt_disc) / (2.0 * A);
-    double t_enter = min(t1, t2);
-    double t_exit = max(t1, t2);
-
-    double t0 = max(0.0, t_enter);
-    double t1c = min(1.0, t_exit);
-    if (t0 > t1c) {
-        return false;
-    }
+    double t_lo = min(t1, t2);
+    double t_hi = max(t1, t2);
+    double s0 = max(0.0, t_lo);
+    double s1 = min(1.0, t_hi);
+    if (s0 > s1 + EPS) return false;
 
     double len = sqrt(A);
-    s_enter = t0 * len;
-    s_exit = t1c * len;
+    s_enter = s0 * len;
+    s_exit = s1 * len;
     return true;
 }
 
-static bool segment_rect_interval(const Point &a, const Point &b, double x_min, double y_min, double x_max, double y_max, double &s_enter, double &s_exit) {
+static bool segment_rect_interval(const Point &a, const Point &b,
+    double x_min, double y_min, double x_max, double y_max,
+    double &s_enter, double &s_exit)
+{
     double dx = b.x - a.x;
     double dy = b.y - a.y;
     double t0 = 0.0;
@@ -100,7 +102,7 @@ static bool segment_rect_interval(const Point &a, const Point &b, double x_min, 
 
     auto clip = [&](double p, double q, double &t0_ref, double &t1_ref) -> bool {
         if (fabs(p) < EPS) {
-            return q >= 0.0;
+            return q >= -EPS;
         }
         double r = q / p;
         if (p < 0.0) {
@@ -117,8 +119,7 @@ static bool segment_rect_interval(const Point &a, const Point &b, double x_min, 
     if (!clip(dx, x_max - a.x, t0, t1)) return false;
     if (!clip(-dy, a.y - y_min, t0, t1)) return false;
     if (!clip(dy, y_max - a.y, t0, t1)) return false;
-
-    if (t0 > t1) return false;
+    if (t0 > t1 + EPS) return false;
 
     double len = dist_pt(a, b);
     s_enter = t0 * len;
@@ -126,30 +127,67 @@ static bool segment_rect_interval(const Point &a, const Point &b, double x_min, 
     return true;
 }
 
-static bool nfz_segment_interval(const NFZ &nfz, const Point &a, const Point &b, double &s_enter, double &s_exit) {
+static bool nfz_segment_interval(const NFZ &nfz, const Point &a, const Point &b,
+    double &s_enter, double &s_exit)
+{
     if (nfz.shape == "circle") {
         return segment_circle_interval(a, b, nfz.cx, nfz.cy, nfz.radius, s_enter, s_exit);
     }
     return segment_rect_interval(a, b, nfz.x1, nfz.y1, nfz.x2, nfz.y2, s_enter, s_exit);
 }
 
-static double earliest_safe_start(const Point &a, const Point &b, double t0, const vector<NFZ> &nfzs) {
+// The old earliest_safe_start function was replaced by earliest_safe_start_fast and is no longer needed.
+
+// --- Path segment: generates waypoints for a leg, handling NFZ avoidance ---
+
+struct WayPoint {
+    double x, y, t;
+    bool is_wait;     // true = WAIT at same position
+    bool is_waypoint; // true = WAYPOINT (intermediate navigation)
+};
+
+vector<Point> global_wps;
+
+struct EdgeNFZ {
+    int nfz_idx;
+    double s_enter;
+    double s_exit;
+};
+
+static vector<EdgeNFZ> static_edge_nfzs[1000][1000];
+static double static_dist[1000][1000];
+
+static void precompute_static_edges(const vector<NFZ> &nfzs) {
+    int W = global_wps.size();
+    if (W > 1000) W = 1000; // safety bound
+    for (int i = 0; i < W; ++i) {
+        for (int j = 0; j < W; ++j) {
+            static_dist[i][j] = dist_pt(global_wps[i], global_wps[j]);
+            if (i == j) continue;
+            for (int k = 0; k < (int)nfzs.size(); ++k) {
+                double s_en, s_ex;
+                if (nfz_segment_interval(nfzs[k], global_wps[i], global_wps[j], s_en, s_ex)) {
+                    static_edge_nfzs[i][j].push_back({k, s_en, s_ex});
+                }
+            }
+        }
+    }
+}
+
+static double earliest_safe_start_fast(double t0, const vector<NFZ> &nfzs, const vector<EdgeNFZ> &intersecting)
+{
     double start = t0;
     bool changed = true;
     int guard = 0;
-    while (changed && guard < 1000) {
+    while (changed && guard < 500) {
         changed = false;
         guard++;
-        for (const auto &nfz : nfzs) {
-            double s_enter = 0.0, s_exit = 0.0;
-            if (!nfz_segment_interval(nfz, a, b, s_enter, s_exit)) {
-                continue;
-            }
-            double enter_time = start + s_enter / SPEED;
-            double exit_time = start + s_exit / SPEED;
-            bool overlap = (enter_time <= nfz.t_end + EPS) && (exit_time >= nfz.t_start - EPS);
-            if (overlap) {
-                double new_start = nfz.t_end - s_enter / SPEED + 1e-6;
+        for (const auto &en : intersecting) {
+            const auto &nfz = nfzs[en.nfz_idx];
+            double enter_time = start + en.s_enter / SPEED;
+            double exit_time = start + en.s_exit / SPEED;
+            if (enter_time <= nfz.t_end + EPS && exit_time >= nfz.t_start - EPS) {
+                double new_start = nfz.t_end - en.s_enter / SPEED + 1e-6;
                 if (new_start > start + EPS) {
                     start = new_start;
                     changed = true;
@@ -160,145 +198,159 @@ static double earliest_safe_start(const Point &a, const Point &b, double t0, con
     return start;
 }
 
-static bool add_leg(Json::Value &path, const Point &from, const Point &to, double payload, double &time, double &battery, const vector<NFZ> &nfzs) {
-    double start = earliest_safe_start(from, to, time, nfzs);
-    if (start > time + EPS) {
-        Json::Value wait_step;
-        wait_step["x"] = from.x;
-        wait_step["y"] = from.y;
-        wait_step["t"] = start;
-        wait_step["action"] = "WAIT";
-        path.append(wait_step);
-        time = start;
+static vector<EdgeNFZ> get_dynamic_edge_nfzs(const Point &a, const Point &b, const vector<NFZ> &nfzs) {
+    vector<EdgeNFZ> res;
+    for(int k = 0; k < (int)nfzs.size(); ++k) {
+        double s_en, s_ex;
+        if(nfz_segment_interval(nfzs[k], a, b, s_en, s_ex)) {
+            res.push_back({k, s_en, s_ex});
+        }
+    }
+    return res;
+}
+
+// Find path from A to B starting at time t0, with NFZ avoidance using Dijkstra.
+static vector<WayPoint> find_safe_path(const Point &a, const Point &b, double t0,
+    const vector<NFZ> &nfzs)
+{
+    int N = 2 + global_wps.size();
+    
+    struct PathNode {
+        double t_arrive;
+        double t_depart;
+        int parent;
+    };
+    vector<PathNode> nodes(N, {1e18, 1e18, -1});
+    nodes[0].t_arrive = t0;
+
+    vector<bool> vis(N, false);
+    for (int step = 0; step < N; step++) {
+        int u = -1;
+        double best_t = 1e18;
+        for (int i = 0; i < N; i++) {
+            if (!vis[i] && nodes[i].t_arrive < best_t) {
+                best_t = nodes[i].t_arrive;
+                u = i;
+            }
+        }
+        if (u == -1 || u == 1) break; 
+        vis[u] = true;
+
+        Point pu = (u == 0) ? a : ((u == 1) ? b : global_wps[u - 2]);
+
+        for (int v = 0; v < N; v++) {
+            if (vis[v]) continue;
+            Point pv = (v == 0) ? a : ((v == 1) ? b : global_wps[v - 2]);
+            
+            double dist;
+            vector<EdgeNFZ> edge_nfzs;
+            if (u >= 2 && v >= 2 && u - 2 < 1000 && v - 2 < 1000) {
+                dist = static_dist[u - 2][v - 2];
+                edge_nfzs = static_edge_nfzs[u - 2][v - 2];
+            } else {
+                dist = dist_pt(pu, pv);
+                edge_nfzs = get_dynamic_edge_nfzs(pu, pv, nfzs);
+            }
+            
+            double t_dep = earliest_safe_start_fast(nodes[u].t_arrive, nfzs, edge_nfzs);
+            double t_arr = t_dep + dist / SPEED;
+            
+            if (t_arr < nodes[v].t_arrive) {
+                nodes[v].t_arrive = t_arr;
+                nodes[v].t_depart = t_dep;
+                nodes[v].parent = u;
+            }
+        }
     }
 
-    double d = dist_pt(from, to);
-    double energy = d * (1.0 + payload);
-    if (battery + EPS < energy) {
-        return false;
+    if (nodes[1].parent == -1) return {};
+
+    vector<int> path_idx;
+    int curr = 1;
+    while (curr != -1) {
+        path_idx.push_back(curr);
+        curr = nodes[curr].parent;
+    }
+    reverse(path_idx.begin(), path_idx.end());
+
+    vector<WayPoint> result;
+    for (int i = 0; i < (int)path_idx.size(); i++) {
+        int u = path_idx[i];
+        Point pu = (u == 0) ? a : ((u == 1) ? b : global_wps[u - 2]);
+        if (i == 0) {
+            result.push_back({pu.x, pu.y, t0, false, false});
+        } else {
+            int p = path_idx[i-1];
+            double t_dep = nodes[u].t_depart;
+            double t_arr = nodes[u].t_arrive;
+            
+            if (t_dep > nodes[p].t_arrive + EPS) {
+                Point pp = (p == 0) ? a : ((p == 1) ? b : global_wps[p - 2]);
+                result.push_back({pp.x, pp.y, t_dep, true, false});
+            }
+            bool is_wp = (u != 1);
+            result.push_back({pu.x, pu.y, t_arr, false, is_wp});
+        }
+    }
+    return result;
+}
+
+static double get_path_dist(const vector<WayPoint> &wps) {
+    if (wps.empty()) return 1e18;
+    double d = 0;
+    for (int i = 1; i < (int)wps.size(); i++) {
+        if (!wps[i].is_wait) {
+            d += dist_pt({wps[i-1].x, wps[i-1].y}, {wps[i].x, wps[i].y});
+        }
+    }
+    return d;
+}
+
+static bool add_leg_wps(Json::Value &path, const vector<WayPoint> &wps,
+    double payload, double &time, double &battery)
+{
+    if (wps.empty()) return false;
+    double total_dist = get_path_dist(wps);
+    double energy = total_dist * (1.0 + payload);
+    if (battery + EPS < energy) return false;
+
+    for (int i = 1; i < (int)wps.size() - 1; i++) {
+        Json::Value step;
+        step["x"] = wps[i].x;
+        step["y"] = wps[i].y;
+        step["t"] = wps[i].t;
+        step["action"] = wps[i].is_wait ? "WAIT" : "WAYPOINT";
+        path.append(step);
     }
 
     battery -= energy;
-    time += d / SPEED;
+    time = wps.back().t;
     return true;
 }
+
+// --- Trip simulation ---
 
 struct TripResult {
     bool success;
     bool infeasible;
     Json::Value path;
     double end_time;
+    double total_energy;
     vector<int> delivered;
-    vector<int> missed;
 };
 
-static void order_trip(vector<int> &trip, const vector<Delivery> &deliveries, const Point &warehouse);
 static TripResult simulate_trip(const vector<int> &trip,
-                                const vector<Delivery> &deliveries,
-                                const Point &warehouse,
-                                const vector<Point> &charging_stations,
-                                const vector<NFZ> &nfzs,
-                                double start_time);
-
-static vector<int> build_trip(const vector<int> &remaining,
-                              const vector<Delivery> &deliveries,
-                              const Drone &drone,
-                              const Point &warehouse,
-                              const vector<Point> &charging_stations,
-                              const vector<NFZ> &nfzs,
-                              double start_time) {
-    vector<int> candidates = remaining;
-    sort(candidates.begin(), candidates.end(), [&](int a, int b) {
-        return deliveries[a].deadline < deliveries[b].deadline;
-    });
-    const int max_candidates = 12;
-    const int max_trip_size = 2;
-    if ((int)candidates.size() > max_candidates) {
-        candidates.resize(max_candidates);
-    }
-
-    vector<int> trip;
-    int best_idx = -1;
-    double best_end = 1e30;
-
-    for (int idx : candidates) {
-        const Delivery &del = deliveries[idx];
-        if (del.weight > drone.max_payload + EPS) {
-            continue;
-        }
-        if (start_time + dist_pt(warehouse, Point{del.x, del.y}) > del.deadline + EPS) {
-            continue;
-        }
-        vector<int> trial(1, idx);
-        TripResult sim = simulate_trip(trial, deliveries, warehouse, charging_stations, nfzs, start_time);
-        if (sim.infeasible || (int)sim.delivered.size() < 1) {
-            continue;
-        }
-        if (sim.end_time + EPS < best_end) {
-            best_end = sim.end_time;
-            best_idx = idx;
-        }
-    }
-
-    if (best_idx == -1) {
-        return trip;
-    }
-    trip.push_back(best_idx);
-
-    if ((int)trip.size() < max_trip_size) {
-        int best_second = -1;
-        double best_pair_end = 1e30;
-        for (int idx : candidates) {
-            if (idx == best_idx) continue;
-            const Delivery &del = deliveries[idx];
-            if (deliveries[best_idx].weight + del.weight > drone.max_payload + EPS) {
-                continue;
-            }
-            vector<int> trial = trip;
-            trial.push_back(idx);
-            order_trip(trial, deliveries, warehouse);
-            TripResult sim = simulate_trip(trial, deliveries, warehouse, charging_stations, nfzs, start_time);
-            if (sim.infeasible || (int)sim.delivered.size() < 2) {
-                continue;
-            }
-            if (sim.end_time + EPS < best_pair_end) {
-                best_pair_end = sim.end_time;
-                best_second = idx;
-            }
-        }
-        if (best_second != -1) {
-            trip.push_back(best_second);
-            order_trip(trip, deliveries, warehouse);
-        }
-    }
-
-    return trip;
-}
-
-static void order_trip(vector<int> &trip, const vector<Delivery> &deliveries, const Point &warehouse) {
-    sort(trip.begin(), trip.end(), [&](int a, int b) {
-        double da = dist_pt(warehouse, Point{deliveries[a].x, deliveries[a].y});
-        double db = dist_pt(warehouse, Point{deliveries[b].x, deliveries[b].y});
-        if (fabs(deliveries[a].deadline - deliveries[b].deadline) > EPS) {
-            return deliveries[a].deadline < deliveries[b].deadline;
-        }
-        if (fabs(da - db) > EPS) {
-            return da < db;
-        }
-        return deliveries[a].weight > deliveries[b].weight;
-    });
-}
-
-static TripResult simulate_trip(const vector<int> &trip,
-                                const vector<Delivery> &deliveries,
-                                const Point &warehouse,
-                                const vector<Point> &charging_stations,
-                                const vector<NFZ> &nfzs,
-                                double start_time) {
+    const vector<Delivery> &deliveries,
+    const Point &warehouse,
+    const vector<Point> &charging_stations,
+    const vector<NFZ> &nfzs,
+    double start_time)
+{
     TripResult res;
     res.success = false;
     res.infeasible = false;
     res.end_time = start_time;
+    res.total_energy = 0;
     res.path = Json::Value(Json::arrayValue);
 
     if (trip.empty()) {
@@ -323,12 +375,21 @@ static TripResult simulate_trip(const vector<int> &trip,
 
     double time = start_time;
     double battery = BATTERY_CAPACITY;
+    double energy_used = 0;
     Point pos = warehouse;
 
     for (int idx : trip) {
         const Delivery &del = deliveries[idx];
         Point target{del.x, del.y};
-        if (!add_leg(res.path, pos, target, payload, time, battery, nfzs)) {
+        
+        auto wps = find_safe_path(pos, target, time, nfzs);
+        double bat_before = battery;
+        if (!add_leg_wps(res.path, wps, payload, time, battery)) {
+            res.infeasible = true; return res;
+        }
+        energy_used += (bat_before - battery);
+
+        if (time > del.deadline + EPS) {
             res.infeasible = true;
             return res;
         }
@@ -341,41 +402,60 @@ static TripResult simulate_trip(const vector<int> &trip,
         deliver_step["delivery_id"] = del.id;
         res.path.append(deliver_step);
 
-        if (time > del.deadline + EPS) {
-            res.missed.push_back(idx);
-        } else {
-            res.delivered.push_back(idx);
-        }
-
+        res.delivered.push_back(idx);
         payload -= del.weight;
         pos = target;
     }
 
-    if (!res.missed.empty()) {
-        res.infeasible = true;
-        return res;
-    }
-
-    double need_return = dist_pt(pos, warehouse) * (1.0 + payload);
+    // Return logic with accurate energy
+    auto wps_ret = find_safe_path(pos, warehouse, time, nfzs);
+    double need_return = get_path_dist(wps_ret) * (1.0 + payload); // payload is 0
+    
     if (battery + EPS < need_return) {
-        if (charging_stations.empty()) {
-            res.infeasible = true;
-            return res;
-        }
-        double best_d = 1e18;
-        int best_idx = -1;
+        // Need to charge
+        int best_sta = -1;
+        double best_total = 1e18;
+        vector<WayPoint> best_sta_wps;
+        vector<WayPoint> best_wh_wps;
+
         for (int i = 0; i < (int)charging_stations.size(); ++i) {
-            double d = dist_pt(pos, charging_stations[i]);
-            if (d < best_d) {
-                best_d = d;
-                best_idx = i;
+            auto wps_to_sta = find_safe_path(pos, charging_stations[i], time, nfzs);
+            if (wps_to_sta.empty()) continue;
+            double d_to_sta = get_path_dist(wps_to_sta);
+            double e_to_sta = d_to_sta * (1.0 + payload);
+            if (battery + EPS < e_to_sta) continue;
+
+            double arr_sta = time + d_to_sta; 
+            double d_sta_wh_est = dist_pt(charging_stations[i], warehouse);
+            double e_sta_wh_est = d_sta_wh_est * 1.0; 
+            double deficit = e_sta_wh_est - (battery - e_to_sta);
+            double charge_time = deficit > 0 ? ceil(deficit / CHARGE_RATE) : 0;
+            double dep_sta = arr_sta + charge_time;
+
+            auto wps_sta_wh = find_safe_path(charging_stations[i], warehouse, dep_sta, nfzs);
+            if (wps_sta_wh.empty()) continue;
+            double d_sta_wh = get_path_dist(wps_sta_wh);
+            
+            double total_dist = d_to_sta + d_sta_wh;
+            if (total_dist < best_total) {
+                best_total = total_dist;
+                best_sta = i;
+                best_sta_wps = wps_to_sta;
+                best_wh_wps = wps_sta_wh;
             }
         }
-        Point station = charging_stations[best_idx];
-        if (!add_leg(res.path, pos, station, payload, time, battery, nfzs)) {
+
+        if (best_sta < 0) {
             res.infeasible = true;
             return res;
         }
+
+        Point station = charging_stations[best_sta];
+        double bat_before = battery;
+        if (!add_leg_wps(res.path, best_sta_wps, payload, time, battery)) {
+            res.infeasible = true; return res;
+        }
+        energy_used += (bat_before - battery);
 
         Json::Value charge_step;
         charge_step["x"] = station.x;
@@ -384,28 +464,30 @@ static TripResult simulate_trip(const vector<int> &trip,
         charge_step["action"] = "CHARGE";
         res.path.append(charge_step);
 
-        double need = dist_pt(station, warehouse);
-        if (battery + EPS < need) {
-            double deficit = need - battery;
+        double deficit = get_path_dist(best_wh_wps) * 1.0 - battery;
+        if (deficit > 0) {
             double charge_time = ceil(deficit / CHARGE_RATE);
             time += charge_time;
             battery += charge_time * CHARGE_RATE;
-
-            Json::Value charge_done;
-            charge_done["x"] = station.x;
-            charge_done["y"] = station.y;
-            charge_done["t"] = time;
-            charge_done["action"] = "CHARGE_COMPLETE";
-            res.path.append(charge_done);
         }
 
+        Json::Value charge_done;
+        charge_done["x"] = station.x;
+        charge_done["y"] = station.y;
+        charge_done["t"] = time;
+        charge_done["action"] = "CHARGE_COMPLETE";
+        res.path.append(charge_done);
+
         pos = station;
+        wps_ret = find_safe_path(pos, warehouse, time, nfzs);
     }
 
-    if (!add_leg(res.path, pos, warehouse, payload, time, battery, nfzs)) {
+    double bat_before = battery;
+    if (!add_leg_wps(res.path, wps_ret, payload, time, battery)) {
         res.infeasible = true;
         return res;
     }
+    energy_used += (bat_before - battery);
 
     Json::Value return_step;
     return_step["x"] = warehouse.x;
@@ -416,8 +498,252 @@ static TripResult simulate_trip(const vector<int> &trip,
 
     res.success = true;
     res.end_time = time;
+    res.total_energy = energy_used;
     return res;
 }
+
+// --- Trip ordering: try permutations for small sets, nearest-neighbor for larger ---
+
+struct OrderEval {
+    int on_time;
+    double energy;
+    double makespan;
+    bool feasible;
+};
+
+static OrderEval eval_order(const vector<int> &order,
+    const vector<Delivery> &deliveries,
+    const Point &warehouse,
+    const vector<Point> &charging_stations,
+    double start_time)
+{
+    OrderEval ev;
+    ev.on_time = 0;
+    ev.energy = 0;
+    ev.makespan = 0;
+    ev.feasible = true;
+
+    double payload = 0;
+    for (int idx : order) payload += deliveries[idx].weight;
+
+    double t = start_time;
+    double battery = BATTERY_CAPACITY;
+    Point pos = warehouse;
+
+    for (int idx : order) {
+        const Delivery &del = deliveries[idx];
+        Point target{del.x, del.y};
+        double d = dist_pt(pos, target);
+        double e = d * (1.0 + payload);
+        battery -= e;
+        ev.energy += e;
+        t += d;
+
+        if (battery < -EPS) { ev.feasible = false; break; }
+        if (t <= del.deadline + EPS) ev.on_time++;
+        else { ev.feasible = false; break; }
+
+        payload -= del.weight;
+        pos = target;
+    }
+
+    if (ev.feasible) {
+        double d_ret = dist_pt(pos, warehouse);
+        double e_ret = d_ret * (1.0 + payload);
+        if (battery + EPS < e_ret) {
+            bool can_charge = false;
+            for (const auto &st : charging_stations) {
+                double d_st = dist_pt(pos, st);
+                double e_st = d_st * (1.0 + payload);
+                if (battery + EPS >= e_st) {
+                    can_charge = true;
+                    double d_st_wh = dist_pt(st, warehouse);
+                    ev.energy += e_st + d_st_wh * (1.0 + payload);
+                    t += d_st + d_st_wh;
+                    break;
+                }
+            }
+            if (!can_charge) ev.feasible = false;
+        } else {
+            ev.energy += e_ret;
+            t += d_ret;
+        }
+    }
+
+    ev.makespan = t - start_time;
+    return ev;
+}
+
+static vector<int> best_ordering(const vector<int> &candidates,
+    const vector<Delivery> &deliveries,
+    const Point &warehouse,
+    const vector<Point> &charging_stations,
+    double start_time)
+{
+    int n = (int)candidates.size();
+    if (n == 0) return {};
+    if (n == 1) return candidates;
+
+    if (n <= 8) {
+        vector<int> perm(n);
+        for (int i = 0; i < n; i++) perm[i] = i;
+
+        vector<int> best_order;
+        int best_on_time = -1;
+        double best_score = -1e18;
+
+        do {
+            vector<int> order(n);
+            for (int i = 0; i < n; i++) order[i] = candidates[perm[i]];
+
+            OrderEval ev = eval_order(order, deliveries, warehouse, charging_stations, start_time);
+            if (!ev.feasible) continue;
+
+            double score = ev.on_time * 1000.0 - ev.energy * 0.1 - ev.makespan * 0.05;
+            if (ev.on_time > best_on_time || (ev.on_time == best_on_time && score > best_score)) {
+                best_on_time = ev.on_time;
+                best_score = score;
+                best_order = order;
+            }
+        } while (next_permutation(perm.begin(), perm.end()));
+
+        if (!best_order.empty()) return best_order;
+    }
+
+    vector<bool> used(n, false);
+    vector<int> result;
+    Point pos = warehouse;
+
+    for (int step = 0; step < n; step++) {
+        int best_i = -1;
+        double best_val = 1e18;
+        for (int i = 0; i < n; i++) {
+            if (used[i]) continue;
+            double d = dist_pt(pos, {deliveries[candidates[i]].x, deliveries[candidates[i]].y});
+            double t = start_time + d; // Rough estimate of arrival time
+            double slack = deliveries[candidates[i]].deadline - t;
+            
+            double val;
+            if (slack < -EPS) val = 1e9 + d;
+            else val = d + 0.1 * deliveries[candidates[i]].deadline;
+            
+            if (val < best_val) {
+                best_val = val;
+                best_i = i;
+            }
+        }
+        if (best_i < 0) break;
+        used[best_i] = true;
+        result.push_back(candidates[best_i]);
+        pos = {deliveries[candidates[best_i]].x, deliveries[candidates[best_i]].y};
+    }
+
+    return result;
+}
+
+// --- Build a trip for a drone ---
+
+static vector<int> build_trip(const vector<int> &remaining,
+    const vector<Delivery> &deliveries,
+    const Drone &drone,
+    const Point &warehouse,
+    const vector<Point> &charging_stations,
+    const vector<NFZ> &nfzs,
+    double start_time)
+{
+    vector<int> candidates = remaining;
+    sort(candidates.begin(), candidates.end(), [&](int a, int b) {
+        return deliveries[a].deadline < deliveries[b].deadline;
+    });
+
+    vector<int> best_trip;
+    double best_trip_score = -1e18;
+    int tested_anchors = 0;
+
+    for (int anchor : candidates) {
+        if (tested_anchors >= 20) break;
+        if (deliveries[anchor].weight > drone.max_payload + EPS) continue;
+        double d = dist_pt(warehouse, {deliveries[anchor].x, deliveries[anchor].y});
+        if (start_time + d > deliveries[anchor].deadline + EPS) continue;
+
+        vector<int> trip_cands;
+        trip_cands.push_back(anchor);
+        double trip_weight = deliveries[anchor].weight;
+
+        Point anchor_pt{deliveries[anchor].x, deliveries[anchor].y};
+        vector<pair<double, int>> nearby;
+        for (int idx : candidates) {
+            if (idx == anchor) continue;
+            if (trip_weight + deliveries[idx].weight > drone.max_payload + EPS) continue;
+            double dist_to_anchor = dist_pt(anchor_pt, {deliveries[idx].x, deliveries[idx].y});
+            nearby.push_back({dist_to_anchor, idx});
+        }
+        sort(nearby.begin(), nearby.end());
+
+        const int MAX_TRIP = 8;
+        for (const auto &p : nearby) {
+            if ((int)trip_cands.size() >= MAX_TRIP) break;
+            int idx = p.second;
+            if (trip_weight + deliveries[idx].weight > drone.max_payload + EPS) continue;
+
+            vector<int> test_trip = trip_cands;
+            test_trip.push_back(idx);
+
+            vector<int> test_order = best_ordering(test_trip, deliveries, warehouse,
+                charging_stations, start_time);
+
+            if (!test_order.empty()) {
+                OrderEval ev = eval_order(test_order, deliveries, warehouse,
+                    charging_stations, start_time);
+                if (ev.feasible && ev.on_time == (int)test_trip.size()) {
+                    trip_cands.push_back(idx);
+                    trip_weight += deliveries[idx].weight;
+                }
+            }
+        }
+
+        vector<int> ordered = best_ordering(trip_cands, deliveries, warehouse,
+            charging_stations, start_time);
+
+        if (ordered.empty()) ordered = {anchor};
+
+        TripResult sim = simulate_trip(ordered, deliveries, warehouse, charging_stations,
+            nfzs, start_time);
+
+        vector<int> valid_trip;
+        if (sim.success) {
+            valid_trip = ordered;
+        } else {
+            while (ordered.size() > 1) {
+                ordered.pop_back();
+                sim = simulate_trip(ordered, deliveries, warehouse, charging_stations,
+                    nfzs, start_time);
+                if (sim.success) {
+                    valid_trip = ordered;
+                    break;
+                }
+            }
+            if (valid_trip.empty()) {
+                sim = simulate_trip({anchor}, deliveries, warehouse, charging_stations,
+                    nfzs, start_time);
+                if (sim.success) valid_trip = {anchor};
+            }
+        }
+
+        if (!valid_trip.empty()) {
+            double score = valid_trip.size() * 1000.0 - sim.end_time * 0.01;
+            if (score > best_trip_score) {
+                best_trip_score = score;
+                best_trip = valid_trip;
+            }
+        }
+        tested_anchors++;
+    }
+
+    return best_trip;
+}
+
+// --- Main ---
 
 int main() {
     string input_str((istreambuf_iterator<char>(cin)), istreambuf_iterator<char>());
@@ -458,6 +784,8 @@ int main() {
         nfz.shape = z["shape"].asString();
         nfz.t_start = z["T_start"].asDouble();
         nfz.t_end = z["T_end"].asDouble();
+        nfz.cx = nfz.cy = nfz.radius = 0;
+        nfz.x1 = nfz.y1 = nfz.x2 = nfz.y2 = 0;
         if (nfz.shape == "circle") {
             nfz.cx = z["center"][0].asDouble();
             nfz.cy = z["center"][1].asDouble();
@@ -471,53 +799,96 @@ int main() {
         nfzs.push_back(nfz);
     }
 
+    global_wps.clear();
+    for (const auto &nfz : nfzs) {
+        double margin = 1e-3;
+        if (nfz.shape == "circle") {
+            double R = nfz.radius + margin;
+            for (int d = 0; d < 8; d++) {
+                double angle = d * 3.14159265358979323846 / 4.0;
+                global_wps.push_back({nfz.cx + R * cos(angle), nfz.cy + R * sin(angle)});
+            }
+        } else {
+            global_wps.push_back({nfz.x1 - margin, nfz.y1 - margin});
+            global_wps.push_back({nfz.x1 - margin, nfz.y2 + margin});
+            global_wps.push_back({nfz.x2 + margin, nfz.y1 - margin});
+            global_wps.push_back({nfz.x2 + margin, nfz.y2 + margin});
+        }
+    }
+    
+    precompute_static_edges(nfzs);
+
     vector<Point> charging_stations;
     Json::Value cs_list = input_data.get("charging_stations", Json::Value(Json::arrayValue));
     for (const auto &cs : cs_list) {
         charging_stations.push_back(Point{cs["x"].asDouble(), cs["y"].asDouble()});
     }
 
+    // ==================== SCHEDULING ====================
     Json::Value flight_manifest(Json::arrayValue);
-    vector<Json::Value> drone_paths(drones.size(), Json::Value(Json::arrayValue));
-    vector<double> drone_times(drones.size(), 0.0);
-    vector<int> remaining(deliveries.size());
-    for (int i = 0; i < (int)deliveries.size(); ++i) remaining[i] = i;
+    int num_drones = (int)drones.size();
 
-    bool progress = true;
-    while (progress && !remaining.empty()) {
-        progress = false;
-        for (int di = 0; di < (int)drones.size(); ++di) {
-            vector<int> trip = build_trip(remaining, deliveries, drones[di], warehouse, charging_stations, nfzs, drone_times[di]);
-            if (trip.empty()) continue;
+    vector<vector<Json::Value>> drone_trip_paths(num_drones);
+    vector<double> drone_times(num_drones, 0.0);
 
-            TripResult res = simulate_trip(trip, deliveries, warehouse, charging_stations, nfzs, drone_times[di]);
-            if (res.infeasible) {
-                continue;
-            }
-
-            if (res.success) {
-                for (const auto &step : res.path) {
-                    drone_paths[di].append(step);
-                }
-                drone_times[di] = res.end_time;
-                vector<int> filtered;
-                for (int idx : remaining) {
-                    if (find(res.delivered.begin(), res.delivered.end(), idx) == res.delivered.end()) {
-                        filtered.push_back(idx);
-                    }
-                }
-                remaining.swap(filtered);
-                progress = true;
+    vector<int> remaining;
+    for (int i = 0; i < (int)deliveries.size(); ++i) {
+        bool any = false;
+        for (const auto &dr : drones) {
+            if (deliveries[i].weight <= dr.max_payload + EPS) {
+                any = true; break;
             }
         }
+        if (any) remaining.push_back(i);
     }
 
-    for (int di = 0; di < (int)drones.size(); ++di) {
-        if (drone_paths[di].empty()) continue;
-        Json::Value drone_entry;
-        drone_entry["drone_id"] = drones[di].id;
-        drone_entry["path"] = drone_paths[di];
-        flight_manifest.append(drone_entry);
+    while (!remaining.empty()) {
+        int best_drone = 0;
+        for (int d = 1; d < num_drones; d++) {
+            if (drone_times[d] < drone_times[best_drone]) best_drone = d;
+        }
+
+        if (drone_times[best_drone] >= 1e18) {
+            break; // All drones are retired
+        }
+
+        vector<int> trip = build_trip(remaining, deliveries, drones[best_drone],
+            warehouse, charging_stations, nfzs, drone_times[best_drone]);
+
+        if (trip.empty()) {
+            drone_times[best_drone] = 1e18; // retire this drone
+            continue;
+        }
+
+        TripResult res = simulate_trip(trip, deliveries, warehouse,
+            charging_stations, nfzs, drone_times[best_drone]);
+
+        if (!res.success || res.delivered.empty()) {
+            // Should theoretically never happen since build_trip validates
+            drone_times[best_drone] = 1e18;
+            continue;
+        }
+
+        drone_trip_paths[best_drone].push_back(res.path);
+        drone_times[best_drone] = res.end_time;
+
+        vector<int> filtered;
+        for (int idx : remaining) {
+            if (find(res.delivered.begin(), res.delivered.end(), idx) == res.delivered.end()) {
+                filtered.push_back(idx);
+            }
+        }
+        remaining.swap(filtered);
+    }
+
+    for (int di = 0; di < num_drones; di++) {
+        for (const auto &trip_path : drone_trip_paths[di]) {
+            if (trip_path.empty()) continue;
+            Json::Value drone_entry;
+            drone_entry["drone_id"] = drones[di].id;
+            drone_entry["path"] = trip_path;
+            flight_manifest.append(drone_entry);
+        }
     }
 
     Json::Value output;
